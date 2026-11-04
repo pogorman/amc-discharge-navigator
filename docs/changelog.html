@@ -40,6 +40,7 @@
 <h3 id="public-snapshot-2026-11-04">Public snapshot</h3>
 <ul>
   <li>O'G asked whether the repo could go public. There are no secrets in it or its history, but it can't be made public as is (<a href="decisions.html#adr-0019">ADR-0019</a>). New <code>scripts/make_public_snapshot.py</code> builds a scrubbed copy in <code>../amc-agent-demo-public</code>, committed there and not pushed (<a href="runbook.html#public-snapshot">runbook</a>).</li>
+  <li>On O'G's go-ahead, published it as the public repo <a href="https://github.com/pogorman/amc-discharge-navigator">pogorman/amc-discharge-navigator</a>. In the copy, links to this repo point at the public one.</li>
 </ul>
 
 <h2 id="2026-11-03">2026-11-03</h2>
@@ -298,7 +299,7 @@
 <h2 id="2026-10-15">2026-10-15</h2>
 <h3 id="repo-2026-10-15">Repo (night): handoff to GitHub</h3>
 <ul>
-  <li>Pushed everything to the repo <code>pogorman/amc-agent-demo</code> so the work can be picked up on another machine.</li>
+  <li>Pushed everything to the repo <code>pogorman/amc-discharge-navigator</code> so the work can be picked up on another machine.</li>
   <li>Added a next steps page (status, to-dos and new-machine setup), now folded into <a href="status.html">Status</a> and the <a href="runbook.html#new-machine">runbook</a>.</li>
   <li>Added <code>CLAUDE.md</code>, project context for Claude Code. Claude's memory is per-machine, so the context travels in the repo.</li>
   <li>Excluded from git: <code>.env</code> (recreate it from the <a href="runbook.html#new-machine">runbook</a>), <code>node_modules</code> and <code>dist</code>, and the kickoff Office docs.</li>

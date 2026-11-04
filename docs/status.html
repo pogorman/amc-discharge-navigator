@@ -34,7 +34,7 @@
 </header>
 <main>
 <h1 id="status">Status</h1>
-<p class="sub">As of 2026-11-04 · public snapshot ready, not pushed · running in the demo tenant (og-svc) · agent, Command Center and Barrier Tracker all working · data still as re-seeded for 2026-11-02 · demo video sixth cut, narrated (12 min 0 s) · the deck follows the video · set up on og-surface</p>
+<p class="sub">As of 2026-11-04 · public copy published (pogorman/amc-discharge-navigator) · running in the demo tenant (og-svc) · agent, Command Center and Barrier Tracker all working · data still as re-seeded for 2026-11-02 · demo video sixth cut, narrated (12 min 0 s) · the deck follows the video · set up on og-surface</p>
 
 <div class="callout"><b>On another laptop,</b> start with <a href="runbook.html#new-machine">Runbook &gt; New machine</a>: clone, <code>.env</code>, sign-ins, and restoring Claude's memory from <code>.claude/memory/</code>. Nothing in Dataverse, Azure or Teams is tied to this laptop.</div>
 
@@ -69,7 +69,7 @@
   <h2 id="done-recently">Done recently</h2>
   <h3>2026-11-04</h3>
   <ul>
-    <li><b>Public snapshot:</b> a scrubbed copy of the repo in <code>../amc-agent-demo-public</code>, one commit, not pushed (<a href="decisions.html#adr-0019">ADR-0019</a>, <a href="runbook.html#public-snapshot">runbook</a>).</li>
+    <li><b>Public copy:</b> a scrubbed snapshot of the repo, built in <code>../amc-agent-demo-public</code> and published as <a href="https://github.com/pogorman/amc-discharge-navigator">pogorman/amc-discharge-navigator</a> (<a href="decisions.html#adr-0019">ADR-0019</a>, <a href="runbook.html#public-snapshot">runbook</a>).</li>
   </ul>
   <h3>2026-11-02</h3>
   <ul>
@@ -135,7 +135,7 @@
   <h2 id="your-next-steps">Your next steps</h2>
   <ol>
     <li><span class="pill amber">Next</span> <b>Your shorter script, with the deck</b> (<a href="deck.html">deck</a>, 28 slides, slide for slide with the demo video). Every slide has notes: what to say over it, and where it sits in the video. Change the wording to your own; Claude keeps the slides in step with the video.</li>
-    <li><span class="pill blue">Your call</span> <b>Going public:</b> the scrubbed copy is in <code>../amc-agent-demo-public</code> (<a href="runbook.html#public-snapshot">runbook</a>). Get Microsoft's open-source approval, look over the copy and its images and video, then create the public repo and push it, or ask Claude to. This repo stays private (<a href="decisions.html#adr-0019">ADR-0019</a>).</li>
+    <li><span class="pill green">Done</span> <b>Public copy</b> at <a href="https://github.com/pogorman/amc-discharge-navigator">pogorman/amc-discharge-navigator</a> (2026-11-04). The working repo stays private. To refresh the public one, ask Claude for a new snapshot and push (<a href="runbook.html#public-snapshot">runbook</a>, <a href="decisions.html#adr-0019">ADR-0019</a>).</li>
     <li><span class="pill amber">Next</span> <b>Keep shaping the <a href="hero-video.html">hero video</a></b> as you work through the demo script: wording, scene timing, which beats it previews, a real Barrier Tracker screenshot (send Claude the app's link; the card in it is drawn today), and a music bed if you have one you're cleared to use. Claude edits <code>docs/hero/animation.html</code> and re-renders <code>docs/assets/hero.mp4</code> in a few minutes (<a href="runbook.html#hero-video">runbook</a>).</li>
     <li><span class="pill blue">Only if you re-record beat 1</span> <b>Rerun the Graph recall check.</b> The emails stay as they are. The 2026-11-01 run found the Maple Grove email, but it also pulled in the earlier Navigator chat where the prior-auth packet was drafted. In Microsoft 365 Copilot, delete that chat, then ask the beat 1 prompt in a new chat (main chat, not the agent). It passes if it cites the Maple Grove email and the PA-2210-7734 email (check the references) and doesn't mention a packet.</li>
     <li><span class="pill amber">Next</span> <b>Confirm the beat 4 and 5 change</b> (Claude's recommendation, 2026-11-01): the "What's still blocking Miguel Reyes?" question moved from Teams in beat 4 to the Command Center's chat in beat 5 (<a href="demo-script.html#beat-5">demo script</a>). Say if you'd rather keep it in Teams.</li>
@@ -172,7 +172,7 @@
     <tr><td>Code App</td><td>"Discharge Command Center" v1.2.1 in og-svc, with the agent chat. <a href="https://apps.powerapps.com/play/e/&lt;environment-id&gt;/app/a1951694-de5a-4196-a0b9-8145e3e4645c?tenantId=&lt;tenant-id&gt;" target="_blank" rel="noopener">Open the app</a></td></tr>
     <tr><td>Barrier Tracker</td><td>Built once with Apps in Copilot Studio (preview) from the prompt on <a href="deck.html#prompt">the deck's request slide</a>, in og-svc, and kept. Beat 4 uses the published app live; beat 6 plays your recording of the build (<a href="decisions.html#adr-0016">ADR-0016</a>).</td></tr>
     <tr><td>Previous tenant</td><td>&lt;previous-tenant&gt; (og-ai-dev), left as-is: <a href="environments.html#previous-tenant">Environments</a>, git tag <code>previous-tenant</code>.</td></tr>
-    <tr><td>Repo</td><td><a href="https://github.com/pogorman/amc-agent-demo" target="_blank" rel="noopener">github.com/pogorman/amc-agent-demo</a> (<code>main</code>)</td></tr>
+    <tr><td>Repo</td><td><a href="https://github.com/pogorman/amc-discharge-navigator" target="_blank" rel="noopener">github.com/pogorman/amc-discharge-navigator</a> (<code>main</code>)</td></tr>
     <tr><td>Every ID</td><td><a href="environments.html">Environments</a></td></tr>
   </table>
   </div>
