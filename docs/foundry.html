@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foundry · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html" aria-current="page">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="foundry">Foundry</h1>
+<p class="sub">Two <b>model deployments in Foundry</b>, one per drafting job (<a href="decisions.html#adr-0005">ADR-0005</a>). The agent reaches them through APIM (<a href="decisions.html#adr-0003">ADR-0003</a>) and the <b>Foundry Deployments</b> custom connector (<a href="decisions.html#adr-0004">ADR-0004</a>). There's no Foundry agent here; each skill sends a chat completion to a deployment.</p>
+
+<h2 id="deployments">Deployments</h2>
+<p>Resource <code>cuh-discharge-foundry2</code> (kind <code>AIServices</code>, SKU S0, custom domain <code>cuh-discharge-foundry2</code>), project <code>amc-discharge-navigator</code>, resource group <code>rg-amc-agent-demo</code>, East US 2. Created by <a href="../infra/provision-foundry.sh"><code>infra/provision-foundry.sh</code></a>, which is idempotent.</p>
+<div class="tablewrap"><table>
+  <tr><th>Deployment</th><th>Model</th><th>Version · format</th><th>SKU · capacity</th><th>Status</th><th>Writes</th></tr>
+  <tr><td><code>patient-summary</code></td><td>Mistral-Large-3</td><td><code>1</code> · Mistral AI</td><td>GlobalStandard · 50</td><td><span class="pill amber">Preview</span> A Foundry model sold by Azure (hosted by Microsoft, billed through Azure). <b>Say preview on camera.</b></td><td>Patient-facing discharge instructions in the patient's language (skill <code>patient-discharge-summary</code>)</td></tr>
+  <tr><td><code>prior-auth</code></td><td>gpt-5.5</td><td><code>2026-04-24</code> · OpenAI</td><td>GlobalStandard · 50</td><td><span class="pill green">GA</span> Retires 2027-10-26.</td><td>SNF prior-auth packets with chart citations (skill <code>prior-auth-packet</code>)</td></tr>
+</table></div>
+<ul>
+  <li>Endpoint: <code>https://cuh-discharge-foundry2.openai.azure.com/openai/v1</code> (OpenAI v1 chat completions). The deployment name goes in the request's <code>model</code> field.</li>
+  <li>The tenant enforces <code>disableLocalAuth=true</code>, so there are <b>no API keys</b> (<a href="known-issues.html#ki-01">KI-01</a>). Callers use Entra ID. admin@&lt;tenant&gt; has Cognitive Services User on the resource for keyless testing.</li>
+  <li>The response's <code>model</code> field is what the skills print in their <code>Model:</code> line. Show that on camera; never ask a model to name itself (<a href="known-issues.html#ki-09">KI-09</a>).</li>
+  <li>Preview and GA status was checked on 2026-10-19 (<a href="demo-script.html#preview-status">user guide</a>). Re-check if you record much later.</li>
+</ul>
+
+<h2 id="apim">APIM</h2>
+<p><code>cuh-discharge-apim2</code> (Consumption, East US 2) sits in front of Foundry. Its system-assigned managed identity has <b>Cognitive Services User</b> on <code>cuh-discharge-foundry2</code>. Created by <a href="../infra/provision-apim.sh"><code>infra/provision-apim.sh</code></a>; the policy and subscription are applied by <a href="../infra/apim_config.py"><code>infra/apim_config.py</code></a>, because <code>az rest</code> crashes on Windows printing APIM's policy XML (<a href="known-issues.html#ki-13">KI-13</a>).</p>
+<div class="tablewrap"><table>
+  <tr><th>Item</th><th>Value</th></tr>
+  <tr><td>Gateway</td><td><code>https://cuh-discharge-apim2.azure-api.net/foundry</code></td></tr>
+  <tr><td>API</td><td>id <code>foundry</code>, path <code>/foundry</code>, display name "Foundry Deployments", HTTPS, subscription required. Backend <code>https://cuh-discharge-foundry2.openai.azure.com/openai/v1</code></td></tr>
+  <tr><td>Operation</td><td><code>chat-completion</code>: <code>POST /chat/completions</code></td></tr>
+  <tr><td>Subscription</td><td><code>discharge-navigator</code> ("Discharge Navigator connector"), scoped to the API. Its key is the connector's credential.</td></tr>
+  <tr><td>Publisher</td><td>Contoso University Health (demo), admin@&lt;tenant&gt;.onmicrosoft.com</td></tr>
+</table></div>
+<p>API policy:</p>
+<pre><code>&lt;policies&gt;
+  &lt;inbound&gt;
+    &lt;base /&gt;
+    &lt;authentication-managed-identity resource="https://cognitiveservices.azure.com" /&gt;
+    &lt;set-header name="Ocp-Apim-Subscription-Key" exists-action="delete" /&gt;
+  &lt;/inbound&gt;
+  &lt;backend&gt;&lt;forward-request timeout="120" /&gt;&lt;/backend&gt;
+  &lt;outbound&gt;&lt;base /&gt;&lt;/outbound&gt;
+  &lt;on-error&gt;&lt;base /&gt;&lt;/on-error&gt;
+&lt;/policies&gt;</code></pre>
+<p>APIM checks the caller's subscription key, strips it, and calls Foundry with its own managed identity. It's the same pattern as the Gov Permitting Wingman demo.</p>
+
+<h2 id="connector">Connector</h2>
+<p>The Power Platform custom connector <b>Foundry Deployments</b> is in <a href="../connector/"><code>connector/</code></a> (<code>apiDefinition.swagger.json</code>, <code>apiProperties.json</code>) and in the AMCDischargeNavigator solution. <code>pac connector create</code> gave it the default <code>new_</code> schema prefix; that's cosmetic and not visible in the demo.</p>
+<div class="tablewrap"><table>
+  <tr><th>Item</th><th>Value</th></tr>
+  <tr><td>Host</td><td><code>cuh-discharge-apim2.azure-api.net</code>, base path <code>/foundry</code></td></tr>
+  <tr><td>Auth</td><td>API key in header <code>Ocp-Apim-Subscription-Key</code> (connection parameter "APIM subscription key")</td></tr>
+  <tr><td>Operation</td><td><code>ChatCompletion</code> ("Chat completion"), <code>POST /chat/completions</code></td></tr>
+  <tr><td>Inputs</td><td><code>model</code> ("Model deployment", e.g. <code>patient-summary</code> or <code>prior-auth</code>), <code>messages</code> (role + content), and <code>max_completion_tokens</code> (advanced)</td></tr>
+  <tr><td>Outputs</td><td><code>id</code>, <code>model</code>, <code>choices[].message.content</code>, <code>choices[].finish_reason</code>, <code>usage</code> (prompt, completion and total tokens)</td></tr>
+  <tr><td>Connection</td><td><code>amc-foundry-key</code>, created in og-svc on 2026-11-01 by <code>scripts/create_foundry_connection.py</code> (previous tenant: O'G's, created 2026-10-19). The agent uses it with <b>Maker</b> credentials, so users never see a key prompt (<a href="decisions.html#adr-0007">ADR-0007</a>).</td></tr>
+  <tr><td>Connection reference</td><td><code>amc_DischargeNavigator.cr.shared_new-5ffoundry-20deployments-5fe712c9f154572394.5dff</code>, with <code>customconnectorid</code> set (<a href="known-issues.html#ki-15">KI-15</a>)</td></tr>
+</table></div>
+<p><b>Why a connector instead of Copilot Studio's native Foundry model option:</b> the built-in way to add a Foundry model to a prompt doesn't support GPT-5-family models (per Microsoft Learn, Oct 2026). The GitHub Copilot harness doesn't change that: its tools are connectors, MCP servers and workflows, and its model list doesn't include our deployments (<a href="known-issues.html#ki-02">KI-02</a>, <a href="decisions.html#adr-0004">ADR-0004</a>).</p>
+
+<h2 id="update">Add or change a deployment</h2>
+<ol>
+  <li>Add a <code>deploy</code> line to <code>infra/provision-foundry.sh</code> (deployment name, model, version, format, capacity) and run it. It skips what already exists.</li>
+  <li>Smoke-test it. The script calls both deployments; add the new name to its loop if you need it tested too.
+<pre><code>python scripts/test_foundry.py          # direct to Foundry, Entra token from az
+python scripts/test_foundry.py --apim   # through APIM, the connector's path</code></pre></li>
+  <li>Point a skill at it: change the <code>Model deployment</code> value in <code>agent/behaviors/&lt;skill&gt;/SKILL.md</code>, and the deployment list in the Foundry tool's description, then push and publish (<a href="runbook.html#edit-the-agent">runbook</a>). Log it in the <a href="copilot-studio.html#edit-log">edit log</a>.</li>
+  <li>Check preview or GA status before you call it either on camera.</li>
+</ol>
+<p>If the connection ever needs recreating, copy the APIM key without printing it and create a new <b>Foundry Deployments</b> connection: <a href="runbook.html#foundry-connection">runbook</a>.</p>
+
+<h2 id="metrics">Check that a draft came from Foundry</h2>
+<p>From the agent's side, look for the <code>Model:</code> line. From the backend, use the Foundry resource's <code>ModelRequests</code> metric split by <code>ModelDeploymentName</code>. Always pass explicit <code>--start-time</code> and <code>--end-time</code>. Without them, the time buckets are misleading, and on 2026-10-19 they made it look as if no calls had been made (<a href="known-issues.html#ki-12">KI-12</a>).</p>
+<pre><code>MSYS_NO_PATHCONV=1 az monitor metrics list \
+  --resource /subscriptions/&lt;subscription-id&gt;/resourceGroups/rg-amc-agent-demo/providers/Microsoft.CognitiveServices/accounts/cuh-discharge-foundry2 \
+  --metric ModelRequests --aggregation Total --interval PT15M \
+  --filter "ModelDeploymentName eq '*'" \
+  --start-time 2026-10-19T12:00:00Z --end-time 2026-10-19T14:00:00Z -o table</code></pre>
+<p>Replace the times with the window you tested in (UTC). On 2026-10-19 this showed <code>patient-summary</code> and <code>prior-auth</code> each called once per test round (<a href="testing.html#results-log">results log</a>).</p>
+</main>
+</body>
+</html>

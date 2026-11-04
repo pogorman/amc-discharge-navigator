@@ -1,0 +1,6 @@
+mcs.metadata:
+  componentName: prior-auth-packet
+  description: Drafts a prior authorization packet for post-acute care (skilled nursing facility, inpatient rehab, home health) from the chart by calling the Foundry prior-auth model deployment. Use when the user asks for a prior auth packet, an authorization request, or clinical justification for a payer.
+  schemaName: amc_DischargeNavigator.skill.prior-auth-packet
+kind: InlineAgentSkill
+skillFolderName: prior-auth-packet

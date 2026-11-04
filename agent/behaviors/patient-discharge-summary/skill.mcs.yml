@@ -1,0 +1,6 @@
+mcs.metadata:
+  componentName: patient-discharge-summary
+  description: Drafts plain-language, patient-facing discharge instructions in the patient's preferred language by calling the Foundry patient-summary model deployment. Use when the user asks for patient instructions, a patient summary, discharge instructions or teach-back material for a specific patient.
+  schemaName: amc_DischargeNavigator.skill.patient-discharge-summary
+kind: InlineAgentSkill
+skillFolderName: patient-discharge-summary

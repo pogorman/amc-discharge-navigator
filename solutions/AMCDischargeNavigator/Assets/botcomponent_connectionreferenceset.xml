@@ -1,0 +1,5 @@
+<botcomponent_connectionreferenceset>
+  <botcomponent_connectionreference botcomponentid.schemaname="amc_DischargeNavigator.tool.amc_foundry-chat-completion" connectionreferenceid.connectionreferencelogicalname="amc_DischargeNavigator.cr.shared_new-5ffoundry-20deployments-5fe712c9f154572394.5dff">
+    <iscustomizable>1</iscustomizable>
+  </botcomponent_connectionreference>
+</botcomponent_connectionreferenceset>

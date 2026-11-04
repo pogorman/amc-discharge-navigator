@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Status · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html" aria-current="page">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="status">Status</h1>
+<p class="sub">As of 2026-11-04 · public snapshot ready, not pushed · running in the demo tenant (og-svc) · agent, Command Center and Barrier Tracker all working · data still as re-seeded for 2026-11-02 · demo video sixth cut, narrated (12 min 0 s) · the deck follows the video · set up on og-surface</p>
+
+<div class="callout"><b>On another laptop,</b> start with <a href="runbook.html#new-machine">Runbook &gt; New machine</a>: clone, <code>.env</code>, sign-ins, and restoring Claude's memory from <code>.claude/memory/</code>. Nothing in Dataverse, Azure or Teams is tied to this laptop.</div>
+
+<div class="callout"><b>Data, checked 2026-11-03 (afternoon):</b> Miguel's 3 barriers are still open, but DP-1001 now has a <b>saved prior-auth packet</b>: your pro dev re-recording saved it at 19:32 UTC. Before re-recording chapter 3, which drafts the packet and asks to save it, ask Claude to clear DP-1001's drafts (the draft step of the <a href="runbook.html#rehearsal-reset">rehearsal reset</a>); any other beat can be re-recorded as is. The data is anchored on 2026-11-02, so dates and days waiting read a day old; for a recording where that matters, ask Claude to re-seed for that day ("re-seed it"). Small differences in the numbers between videos don't matter. After a rehearsal, ask for the <a href="runbook.html#rehearsal-reset">rehearsal reset</a>.</div>
+
+<div class="callout">Sign-ins on og-surface, 2026-11-02: az, pac (on og-svc, version 2.13.1) and <code>pa</code> are all on admin@&lt;tenant&gt;, so beat 5's deploy needs no extra sign-in. <code>.env</code> is the og-svc one (the old tenant's is kept as <code>.env.previous-tenant</code>). <code>agent/</code> here is still linked to the old og-ai-dev bot; re-link it before any agent change (<a href="runbook.html#new-machine">Runbook &gt; New machine</a>).</div>
+
+<div class="card">
+  <h2 id="health-check">Last health check (2026-11-02, after the re-seed for today)</h2>
+  <p class="muted">Backend checks Claude ran on og-surface after re-seeding og-svc for 2026-11-02. Earlier checks, including the previous tenant's recording-day check, are in the <a href="testing.html#results-log">results log</a>.</p>
+  <div class="tablewrap">
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Sign-ins</td><td><span class="pill green">Pass</span> az, pac (on og-svc) and <code>pa</code> on admin@&lt;tenant&gt;</td></tr>
+    <tr><td><code>seed_data.py --reset --anchor 2026-11-02</code></td><td><span class="pill green">Pass</span> 36 patients, 36 plans, 209 tasks</td></tr>
+    <tr><td><code>verify_seed.py</code></td><td><span class="pill green">Pass</span> 36 plans; Miguel's 3 barriers open (prior auth and bed acceptance Waiting on External, transport Not Started); DP-1001 has no drafts</td></tr>
+    <tr><td><code>expected_kpis.py</code> (live, today)</td><td><span class="pill green">Pass</span> 12 · 8 (11 bed-days) · 44 · 38 h (n=7) · 10, matching the <a href="demo-script.html#expected-numbers">numbers to expect</a></td></tr>
+    <tr><td><code>test_foundry.py --apim</code></td><td><span class="pill green">Pass</span> <code>patient-summary</code> &rarr; mistral-large-3, <code>prior-auth</code> &rarr; gpt-5.5-2026-04-24 (the agent's path). The first try timed out reading the response; the rerun passed.</td></tr>
+    <tr><td>Code App build</td><td><span class="pill green">Pass</span> <code>npm run build</code> in <code>code-app/</code></td></tr>
+    <tr><td><code>test_foundry.py</code> (direct, Entra ID)</td><td><span class="pill amber">Open</span> 401 for admin@&lt;tenant&gt; even though it has Cognitive Services User on <code>cuh-discharge-foundry2</code> and the token is right. Developer smoke test only; the agent doesn't use this path.</td></tr>
+    <tr><td>Agent</td><td><span class="pill green">Pass</span> Last published 2026-11-02 00:15 UTC, by the beat 3 recording, on <b>GPT 6.1 Sol</b> (was Claude Sonnet 4.6). In Teams and Microsoft 365 Copilot it lists Miguel's barriers and builds the prior-auth packet (<a href="known-issues.html#ki-30">KI-30</a> fixed)</td></tr>
+    <tr><td>Solution membership</td><td><span class="pill green">Pass</span> Checked after that publish: the agent and its components, the connection references, the 3 tables and the Code App are only in AMCDischargeNavigator. <span class="pill amber">Your call</span> Your preferred solution in og-svc is unset</td></tr>
+    <tr><td>Data state (2026-11-03)</td><td><span class="pill green">Pass</span> Miguel's 3 barriers open. <span class="pill amber">Changed</span> DP-1001 has a saved prior-auth packet (from the pro dev re-recording, 19:32 UTC); no patient instructions (read-only check)</td></tr>
+    <tr><td>Graph recall</td><td><span class="pill green">Seeded</span> Both emails sent from Carole Poland on 2026-11-01. They have no dates in them, so the re-seed doesn't affect them and they don't need redoing.</td></tr>
+  </table>
+  </div>
+</div>
+
+<p class="callout">The numbers to expect on camera, before and after beat 4, are in the <a href="demo-script.html#expected-numbers">demo script</a>.</p>
+
+<div class="card">
+  <h2 id="done-recently">Done recently</h2>
+  <h3>2026-11-04</h3>
+  <ul>
+    <li><b>Public snapshot:</b> a scrubbed copy of the repo in <code>../amc-agent-demo-public</code>, one commit, not pushed (<a href="decisions.html#adr-0019">ADR-0019</a>, <a href="runbook.html#public-snapshot">runbook</a>).</li>
+  </ul>
+  <h3>2026-11-02</h3>
+  <ul>
+    <li><b>Chapters 2 and 4 re-recorded</b> (2026-11-03): chapter 2 now lists Miguel and his three barriers (the first take was Ruth); chapter 4 shows more of the Command Center, with callouts on the dashboard and Miguel's plan, and the agent drafting and saving his prior-auth packet, which then shows on his plan as a draft.</li>
+    <li><b>Demo video, sixth cut: narrated</b> (2026-11-03): an AI voice reads it from start to finish, Grant on Microsoft's MAI-Voice-2.1 (preview) in Azure Speech (<a href="decisions.html#adr-0018">ADR-0018</a>). The pauses, cards and holds wait for the narration, so it's 12 min 0 s. The captions file is the narration, and the deck's notes end with it.</li>
+    <li><b>Demo video, fifth cut</b> (2026-11-03): the use case after the title card, the cast as a card, pauses with callouts in chapters 1, 2, 3, 6 and 7, smooth scrolling in chapter 3, the og-svc question cut, no "Her app" slide, and the hero's Deploy and Govern merged. 8 min 24 s.</li>
+    <li><b>Demo video, fourth cut</b> (2026-11-03): beat 3 plays from the start (Copilot Studio's home, Agents, the agent loading), then pauses for a tour of the agent's setup, a box and a note for each part, before the model choice. 6 min 5 s.</li>
+    <li><b>The deck follows the demo video</b> (2026-11-03): 28 slides in the video's order, the same cards, a slide for each recording that plays its stretch of the video, and notes on every slide saying what to say and where it sits in the video. The use-case slide isn't in the video, so it's out of the deck; your words for it are in the overview's notes. Every video build keeps the deck in step.</li>
+    <li><b>Demo video, third cut:</b> pro dev now comes before the huddle, so the huddle runs straight into the reveal, and every chapter card is followed by a "What you'll see" card. 5 min 18 s.</li>
+    <li><b>Demo video, second cut:</b> it opens on the Discharge Navigator title card, then the overview, then a new "Now let's see it work." card into the details at 0:31, then the cast and the beats. No zooms: every recording plays as the whole window. Beats 1 and 2 have tags at the window's top right: "Microsoft 365 Copilot · with Work IQ" and "Microsoft Copilot Studio · agent in Microsoft 365 Copilot". 4 min 25 s (<a href="hero-video.html#demo-video">Hero video &gt; The full demo video</a>). The page also has an always-visible Play/Pause button.</li>
+    <li><b>Re-seeded for today's recordings:</b> 36 patients, 36 plans, 209 tasks, anchored on 2026-11-02. Miguel's 3 barriers are open again, DP-1001 has no drafts, and James Tran's medication reconciliation is open again, so it's 44 before beat 4. <code>verify_seed.py</code>, <code>expected_kpis.py</code> and <code>test_foundry.py --apim</code> passed (health check above).</li>
+    <li><b>og-surface set up:</b> Claude's memory restored from <code>.claude/memory/</code>, <code>.env</code> switched from the old tenant to og-svc, sign-ins checked.</li>
+  </ul>
+  <h3>2026-11-01</h3>
+  <ul>
+    <li><b>Demo video:</b> a 4 min 20 s captioned cut of the whole demo from your beat recordings, with chapter cards and speed badges (<a href="hero-video.html#demo-video">Hero video &gt; The full demo video</a>). It's in git as <code>docs/assets/demo-video.mp4</code> and plays on that page; <code>scripts/build_demo_video.py</code> rebuilds it from the recordings in <code>videos-do-not-put-in-repo/</code>.</li>
+    <li><b>Rehearsal through beat 5</b> (evening). Beat 3 drafted both documents (Foundry logged the calls), but neither was saved to Miguel's plan, so beat 5 had no drafts; the demo script's beat 3 now says to save after each one. Beat 4 closed the bed acceptance. Data is left rehearsed; see the callout at the top.</li>
+    <li><b>Hero video, second cut:</b> about 20% slower, plus 04 Deploy (the architecture inside your tenant) and 05 Govern (six guardrails lighting it up). Now 31 seconds (<a href="hero-video.html">Hero video</a>).</li>
+    <li><b>Deck: a cover and the hero video</b> are now slides 1 and 2, before the use case. The video plays by itself when its slide opens. The deck is 7 slides; the opening is slides 1 to 5, beat 6 uses slides 6 and 7, and beat 7 closes on slide 5.</li>
+    <li><b>Hero video:</b> an 18-second intro for any customer, made from the live apps (<a href="hero-video.html">Hero video</a>, <code>docs/assets/hero.mp4</code>).</li>
+    <li><b>Code App v1.2.1 deployed:</b> Ask Discharge Navigator, a chat with the agent inside the Command Center (<a href="decisions.html#adr-0017">ADR-0017</a>, <a href="known-issues.html#ki-32">KI-32</a>). v1.2.0 went white when a reply arrived; v1.2.1 fixes it (<a href="known-issues.html#ki-34">KI-34</a>). Claude verified it in local play, and you tested it in the published app: it works.</li>
+    <li><b>Demo script:</b> beat 5 now asks "What's still blocking Miguel Reyes?" in the Command Center's chat, instead of beat 4 switching to Teams (Claude's recommendation; confirm next session). The opening is deck slides 1 to 3, with the architecture as slide 3.</li>
+    <li><b>Demo script reordered around Barrier Tracker</b> (<a href="decisions.html#adr-0016">ADR-0016</a>). Beat 4 is the huddle: the nurse manager closes Miguel's bed acceptance in the app you already built, and the agent sees it. Beat 5 is the pro dev (the Command Center shows 43 and Miguel at 2). Beat 6 is the reveal: deck slide 3, your recorded clip of the build, then slide 4. Barrier Tracker is now kept between rehearsals. The canvas steps and Publish to Teams are gone (<a href="demo-script.html#beats">Demo script</a>).</li>
+    <li><b>Rebuilt in the demo tenant</b> (<a href="decisions.html#adr-0015">ADR-0015</a>, <a href="environments.html">Environments</a>): Foundry <code>cuh-discharge-foundry2</code> and APIM <code>cuh-discharge-apim2</code> (both models pass through APIM), the three tables, the solution import into og-svc (agent, connector, Code App), the Dataverse MCP client, the <code>amc-foundry-key</code> connection, and data seeded for 2026-11-01 with the same expected numbers. The old tenant is untouched.</li>
+    <li><b>No canvas app.</b> The nurse manager builds Barrier Tracker with Apps in Copilot Studio (preview) instead, and it still closes Miguel's bed-acceptance barrier (<a href="decisions.html#adr-0014">ADR-0014</a>). The ELI5 cast and the home page are updated. The demo script's beats 4 and 5 are flagged as out of date.</li>
+    <li><b>Deck started</b> (<a href="deck.html">Deck</a>): slide 1 is the use case, slide 2 the cast, slide 3 the nurse manager's prompt for building Barrier Tracker (Copy prompt button on the slide), slide 4 her own sandbox reaching the hospital's data as her, with your line on it. The prompt now names og-ai-dev's web address, because Copilot Studio builds apps in your personal environment (og-dv), not og-ai-dev (<a href="known-issues.html#ki-27">KI-27</a>). Your text is in slide 1's speaker notes (N).</li>
+    <li><b>Recording-day check passed</b> (above).</li>
+  </ul>
+  <h3>2026-10-31</h3>
+  <ul>
+    <li><b>Re-seeded for the 2026-11-01 recording:</b> 36 patients, 36 plans, 209 tasks, anchored on 2026-11-01. Miguel's 3 barriers are open, no drafts, medically ready 2026-10-31 and expected discharge 2026-11-01. <code>verify_seed.py</code> and <code>test_foundry.py --apim</code> passed, there's no Barrier Tracker app, and the KPIs as of 2026-11-01 match the <a href="demo-script.html#expected-numbers">expected numbers</a>. Until then the Command Center reads as if it's a day early.</li>
+    <li><code>expected_kpis.py --as-of &lt;date&gt;</code> gives the numbers for a future recording date. <code>auth.py</code> waits up to 60 seconds for an az token (<a href="known-issues.html#ki-26">KI-26</a>).</li>
+  </ul>
+  <h3>2026-10-22</h3>
+  <ul>
+    <li><b>Demo script is its own page again</b>, in the shared light style and on the nav: <a href="demo-script.html">Demo script</a>. It now has the expected numbers in beats 2 and 6. The user guide keeps the apps and screens.</li>
+    <li><b>Ready to switch laptops:</b> docs and Claude's memory are in git (memory snapshot in <code>.claude/memory/</code>). Setup steps: <a href="runbook.html#new-machine">Runbook &gt; New machine</a>.</li>
+    <li><b>Re-seeded for 2026-10-22:</b> 36 patients, 36 plans, 209 tasks. Drafts cleared, Miguel's 3 barriers open. <code>verify_seed.py</code> and <code>test_foundry.py --apim</code> passed, and there's no Barrier Tracker app (<a href="demo-script.html#expected-numbers">numbers to expect</a>).</li>
+  </ul>
+  <h3>2026-10-21</h3>
+  <ul>
+    <li><b>Teams team created</b> for beats 4 and 5: <b>6 East Care Team</b> (private, you're the owner). Barrier Tracker goes on its <b>General</b> channel (<a href="environments.html#m365">Environments</a>).</li>
+    <li><b>Pre-recording health check</b> (above).</li>
+  </ul>
+  <h3>2026-10-20</h3>
+  <ul>
+    <li><b>Demo script</b> with a pre-record checklist, 7 beats, prompts to copy, suggested lines and fallbacks (<a href="demo-script.html#demo-script">Demo script</a>).</li>
+    <li><b>The canvas beats close a barrier.</b> In beat 5 you mark Miguel's Maple Grove bed acceptance Completed from the Barrier Tracker tab in Teams. The agent's next answer and the Command Center both reflect it (<a href="decisions.html#adr-0012">ADR-0012</a>).</li>
+    <li><b>Docs restructured</b> to the-agents pattern: shared stylesheet, one nav bar, status, runbook, known issues, decisions and changelog pages (<a href="decisions.html#adr-0013">ADR-0013</a>).</li>
+  </ul>
+  <h3>2026-10-19</h3>
+  <ul>
+    <li><b>Agent built from the CLI</b> on the GitHub Copilot harness, with no topics (<a href="decisions.html#adr-0006">ADR-0006</a>). Claude published it at 12:31 UTC. You added the Teams and M365 Copilot channels, trimmed the Dataverse MCP tools to 5, and re-published at 13:03 UTC.</li>
+    <li><b>MedicaidIntegrityLab cleanup:</b> 11 AMC components were removed from that solution (membership only; nothing deleted). Your preferred solution is now AMC Discharge Navigator (<a href="known-issues.html#ki-05">KI-05</a>). You deleted the duplicate solution and publisher that <code>pac copilot init</code> created (<a href="known-issues.html#ki-03">KI-03</a>).</li>
+    <li><b>Code App v1.1.0</b> deployed at 13:48 UTC: the plan drawer shows the agent's drafts (<a href="decisions.html#adr-0009">ADR-0009</a>).</li>
+    <li><b>Graph recall seeded:</b> the Teams chat with the agent and both emails from Adele Vance (<a href="runbook.html#graph-seeding">Runbook</a>).</li>
+    <li><b>Preview and GA check</b> for on-camera callouts: Mistral-Large-3 and the Evaluate tab are preview; the rest is GA (<a href="demo-script.html#preview-status">Demo script</a>).</li>
+    <li><b>Architecture diagram</b> (<a href="technical-guide.html#architecture">Technical guide</a>).</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 id="your-next-steps">Your next steps</h2>
+  <ol>
+    <li><span class="pill amber">Next</span> <b>Your shorter script, with the deck</b> (<a href="deck.html">deck</a>, 28 slides, slide for slide with the demo video). Every slide has notes: what to say over it, and where it sits in the video. Change the wording to your own; Claude keeps the slides in step with the video.</li>
+    <li><span class="pill blue">Your call</span> <b>Going public:</b> the scrubbed copy is in <code>../amc-agent-demo-public</code> (<a href="runbook.html#public-snapshot">runbook</a>). Get Microsoft's open-source approval, look over the copy and its images and video, then create the public repo and push it, or ask Claude to. This repo stays private (<a href="decisions.html#adr-0019">ADR-0019</a>).</li>
+    <li><span class="pill amber">Next</span> <b>Keep shaping the <a href="hero-video.html">hero video</a></b> as you work through the demo script: wording, scene timing, which beats it previews, a real Barrier Tracker screenshot (send Claude the app's link; the card in it is drawn today), and a music bed if you have one you're cleared to use. Claude edits <code>docs/hero/animation.html</code> and re-renders <code>docs/assets/hero.mp4</code> in a few minutes (<a href="runbook.html#hero-video">runbook</a>).</li>
+    <li><span class="pill blue">Only if you re-record beat 1</span> <b>Rerun the Graph recall check.</b> The emails stay as they are. The 2026-11-01 run found the Maple Grove email, but it also pulled in the earlier Navigator chat where the prior-auth packet was drafted. In Microsoft 365 Copilot, delete that chat, then ask the beat 1 prompt in a new chat (main chat, not the agent). It passes if it cites the Maple Grove email and the PA-2210-7734 email (check the references) and doesn't mention a packet.</li>
+    <li><span class="pill amber">Next</span> <b>Confirm the beat 4 and 5 change</b> (Claude's recommendation, 2026-11-01): the "What's still blocking Miguel Reyes?" question moved from Teams in beat 4 to the Command Center's chat in beat 5 (<a href="demo-script.html#beat-5">demo script</a>). Say if you'd rather keep it in Teams.</li>
+    <li><span class="pill blue">Your call</span> <b>Watch the <a href="hero-video.html#demo-video">demo video</a></b> and say what to change: caption wording, pacing. The zooms are gone (2026-11-02): every recording plays as the whole window. Chapters 2 and 4 were re-recorded on 2026-11-03: both list Miguel's three barriers, and chapter 4 drafts and saves his prior-auth packet. And beat 3 switches the agent's model from Claude Sonnet 4.6 to GPT 6.1 Sol and publishes. The live agent is on GPT 6.1 Sol (checked 2026-11-02). You said the model doesn't matter much; we come back to it only if you re-record beat 3. The deck's architecture slide, the technical guide and CLAUDE.md still say Sonnet 4.6. The third cut is in git, so it's on both laptops after a pull.</li>
+    <li><span class="pill blue">Your call</span> <b>Demo video file size:</b> 81 MB, close to GitHub's 100 MB per-file limit (pushes over 100 MB are refused). Before a cut that adds length, decide: encode the final join a little smaller (CRF 21, Claude's recommendation; roughly 55 to 60 MB) or move the video to Git LFS.</li>
+    <li><span class="pill blue">Your call</span> <b>Any re-recordings</b> with the <a href="demo-script.html#demo-script">demo script</a>. The demo video is cut from the recordings you have; re-record a beat only if you want to replace it. In beat 3, say "Yes, save it to his plan." after <i>each</i> draft.</li>
+    <li><span class="pill green">Done</span> <b>Other laptop set up and re-seeded for the recording date</b> (og-surface, 2026-11-02; health check above).</li>
+    <li><span class="pill amber">Next</span> <b>Stage VS Code</b> on <code>code-app/</code> with GitHub Copilot ready. The on-camera ask: "Add a filter for High readmission risk to the plans table."</li>
+    <li><span class="pill blue">Your call</span> <b>DLP policy</b> for the governance beat. If you want one, Claude can script it: scoped to og-svc, with Dataverse, Office 365 and Foundry Deployments in Business, and a couple of social connectors blocked. It's a tenant-level change, so Claude waits for your go.</li>
+    <li><span class="pill green">Done</span> <b>Agent chat in the Command Center</b> (v1.2.1): you tested it in the <a href="https://apps.powerapps.com/play/e/&lt;environment-id&gt;/app/a1951694-de5a-4196-a0b9-8145e3e4645c?tenantId=&lt;tenant-id&gt;" target="_blank" rel="noopener">published app</a> on 2026-11-01 and it worked (<a href="decisions.html#adr-0017">ADR-0017</a>).</li>
+    <li><span class="pill green">Done</span> <b>Barrier Tracker builds from one prompt</b> (<a href="deck.html#prompt">the deck's request slide</a>) and shows real data in og-svc. You recorded the build for beat 6. <b>Keep the app:</b> beat 4 uses it live.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2 id="claude-does">Claude does</h2>
+  <ol>
+    <li><b>Before recording:</b> re-seed for the recording date (<code>python scripts/seed_data.py --reset --anchor &lt;date&gt;</code>, about 10 minutes, <a href="known-issues.html#ki-24">KI-24</a>), then <code>verify_seed.py</code>, <code>expected_kpis.py</code> and <code>test_foundry.py --apim</code>. That also clears the saved drafts and reopens Miguel's barriers. Claude gives you the KPI numbers to expect (<a href="runbook.html#recording-day">Runbook</a>). The re-seed deletes and recreates the demo rows, so Claude Code's auto mode needs your explicit "re-seed it" (<a href="known-issues.html#ki-25">KI-25</a>).</li>
+    <li><b>Rehearsal reset</b> on request: reopen DP-1001's bed-acceptance task and clear its drafts (<a href="runbook.html#rehearsal-reset">Runbook</a>).</li>
+    <li><b>Solution membership:</b> after any agent init or push, or any new app, check that nothing of ours landed in another project's solution (<a href="runbook.html#solution-membership">Runbook</a>).</li>
+    <li><b>Publishing the agent</b> after changes, when you say "publish it" (<a href="known-issues.html#ki-21">KI-21</a>).</li>
+    <li><b>After recording:</b> discard the VS Code change from beat 5.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2 id="where-things-live">Where things live</h2>
+  <div class="tablewrap">
+  <table>
+    <tr><th>Thing</th><th>Location</th></tr>
+    <tr><td>Dataverse</td><td>og-svc, <code>https://og-svc.crm.dynamics.com</code> · solution <code>AMCDischargeNavigator</code>, publisher prefix <code>amc</code>. Details: <a href="dataverse.html">Dataverse</a>.</td></tr>
+    <tr><td>Agent</td><td>"Discharge Navigator" in Copilot Studio (og-svc), schema <code>amc_DischargeNavigator</code>. Workspace in <code>agent/</code>. Details: <a href="copilot-studio.html">Copilot Studio</a>.</td></tr>
+    <tr><td>Models</td><td>Foundry <code>cuh-discharge-foundry2</code> · project <code>amc-discharge-navigator</code> · <code>patient-summary</code> (Mistral-Large-3) and <code>prior-auth</code> (gpt-5.5), behind APIM <code>cuh-discharge-apim2</code> · <code>rg-amc-agent-demo</code> (East US 2). Details: <a href="foundry.html">Foundry</a>.</td></tr>
+    <tr><td>Code App</td><td>"Discharge Command Center" v1.2.1 in og-svc, with the agent chat. <a href="https://apps.powerapps.com/play/e/&lt;environment-id&gt;/app/a1951694-de5a-4196-a0b9-8145e3e4645c?tenantId=&lt;tenant-id&gt;" target="_blank" rel="noopener">Open the app</a></td></tr>
+    <tr><td>Barrier Tracker</td><td>Built once with Apps in Copilot Studio (preview) from the prompt on <a href="deck.html#prompt">the deck's request slide</a>, in og-svc, and kept. Beat 4 uses the published app live; beat 6 plays your recording of the build (<a href="decisions.html#adr-0016">ADR-0016</a>).</td></tr>
+    <tr><td>Previous tenant</td><td>&lt;previous-tenant&gt; (og-ai-dev), left as-is: <a href="environments.html#previous-tenant">Environments</a>, git tag <code>previous-tenant</code>.</td></tr>
+    <tr><td>Repo</td><td><a href="https://github.com/pogorman/amc-agent-demo" target="_blank" rel="noopener">github.com/pogorman/amc-agent-demo</a> (<code>main</code>)</td></tr>
+    <tr><td>Every ID</td><td><a href="environments.html">Environments</a></td></tr>
+  </table>
+  </div>
+</div>
+</main>
+</body>
+</html>

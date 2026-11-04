@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discharge Navigator hero</title>
+<style>
+  /* The 31-second hero video for the AMC Discharge Navigator demo. A fixed 1920x1080 stage, scaled to fit the
+     window. Every animation starts at t=0 with its own delay, so ?capture can pause them all and seek to any frame
+     (window.seek(ms)) for a frame-by-frame render. Rendered to ../assets/hero.mp4 (runbook: hero video). */
+  :root {
+    --bg: #081126; --bg2: #0d1b3d; --text: #f3f6fb; --muted: #a8b5cc; --line: rgba(255, 255, 255, 0.12);
+    --teal: #3fd0bb; --blue: #5aa9ff; --purple: #b896ff; --red: #ff6b6b; --green: #4fd68b; --amber: #ffc85c;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --text-face: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  /* Centered on the window and scaled to fit (fit() sets --scale). At 1920x1080, as in the render, it fills the window exactly. */
+  .stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; overflow: hidden;
+           transform: translate(-50%, -50%) scale(var(--scale, 1));
+           background: radial-gradient(1200px 800px at 15% 10%, #13306b 0%, transparent 60%),
+                       radial-gradient(1000px 700px at 90% 90%, #2a1a5c 0%, transparent 60%), var(--bg);
+           color: var(--text); font-family: var(--text-face); }
+  .glow { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.35; }
+  .glow.a { width: 700px; height: 700px; left: -150px; top: 420px; background: #1d6fd6; animation: drift 31s linear 0s both; }
+  .glow.b { width: 600px; height: 600px; right: -120px; top: -160px; background: #6a3fd1; animation: drift 31s linear 0s reverse both; }
+  .grid { position: absolute; inset: 0; opacity: 0.07;
+          background-image: linear-gradient(var(--text) 1px, transparent 1px), linear-gradient(90deg, var(--text) 1px, transparent 1px);
+          background-size: 64px 64px; mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 75%); }
+
+  .scene { position: absolute; inset: 0; animation: sceneOut 0.5s ease-in var(--out, 99s) both; }
+  .in { animation: rise 0.8s var(--ease) var(--d, 0ms) both; }
+  .pop { animation: pop 0.6s var(--ease) var(--d, 0ms) both; }
+  .fade { animation: fade 0.8s ease var(--d, 0ms) both; }
+  .slide-r { animation: slideR 1s var(--ease) var(--d, 0ms) both; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.06); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideR { from { opacity: 0; transform: translateX(160px) perspective(1600px) rotateY(-14deg); }
+                      to { opacity: 1; transform: perspective(1600px) rotateY(-6deg); } }
+  @keyframes sceneOut { from { opacity: 1; transform: none; filter: none; } to { opacity: 0; transform: translateY(-30px) scale(0.98); filter: blur(6px); } }
+  @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(140px, -90px); } }
+
+  /* Shared type */
+  .kicker { font: 600 22px/1 var(--text-face); letter-spacing: 0.22em; text-transform: uppercase; color: var(--teal); }
+  .step { font: 600 22px/1 var(--text-face); letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .step b { color: var(--teal); font-weight: 700; margin-right: 14px; }
+  h1, h2 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; }
+  h2 { font-size: 76px; line-height: 1.04; font-weight: 650; }
+  .sub { font-size: 30px; line-height: 1.4; color: var(--muted); margin: 0; }
+  .chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 999px;
+          background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line); font-size: 22px; color: var(--text); white-space: nowrap; }
+  .chip i { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--teal)); box-shadow: 0 0 12px var(--c, var(--teal)); }
+  .preview { color: var(--amber); font-weight: 600; }
+
+  /* Scene 1: the hook */
+  .s1 { display: flex; flex-direction: column; justify-content: center; padding: 0 180px; gap: 28px; }
+  .s1 h1 { font-size: 112px; line-height: 1.02; font-weight: 700; }
+  .s1 h1 .red { color: var(--red); }
+  .days { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 40px; width: 1400px; }
+  .day .cell { height: 78px; border-radius: 10px; background: rgba(90, 169, 255, 0.18); border: 1px solid rgba(90, 169, 255, 0.45); }
+  .day.ready .cell { border-top: 8px solid var(--green); }
+  .day.avoid .cell { background: repeating-linear-gradient(135deg, rgba(255, 107, 107, 0.45) 0 14px, rgba(255, 107, 107, 0.15) 14px 28px);
+                     border-color: var(--red); animation: pop 0.6s var(--ease) var(--d) both, pulse 1.2s ease-in-out calc(var(--d) + 600ms) 3 both; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0.25), 0 0 40px rgba(255, 107, 107, 0.6); } }
+  .day .label { display: block; margin-top: 14px; font-size: 22px; color: var(--muted); }
+  .day .event { display: block; font-size: 24px; font-weight: 600; min-height: 32px; }
+  .day.ready .event { color: var(--green); }
+  .day.avoid .event { color: var(--red); }
+
+  /* Scenes 2 to 5: copy on the left, visual on the right */
+  .split { display: grid; grid-template-columns: 720px 1fr; gap: 80px; align-items: center; height: 100%; padding: 0 120px 90px 140px; }
+  .copy { display: flex; flex-direction: column; gap: 30px; }
+  .chips { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; margin-top: 6px; }
+
+  .window { border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  .window img { display: block; width: 100%; }
+
+  /* Scene 2: ask */
+  .ask-visual { position: relative; justify-self: center; width: 600px; }
+  .ask-visual .window { width: 600px; }
+  .ask-visual .window img { animation: wipe 1.6s var(--ease) var(--wipe) both; }
+  @keyframes wipe { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+  .bubble { position: absolute; right: 30px; top: -70px; padding: 18px 26px; border-radius: 22px 22px 6px 22px;
+            background: linear-gradient(135deg, #2f6fe0, #6a4fd8); font-size: 30px; font-weight: 600; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); }
+  .bubble .caret { display: inline-block; width: 3px; height: 30px; margin-left: 3px; vertical-align: -4px; background: #fff; }
+
+  /* Scene 3: draft */
+  .docs-visual { position: relative; height: 760px; }
+  .doc { position: absolute; width: 520px; padding: 34px 36px; border-radius: 18px; background: #fbfcfe; color: #1c2433;
+         box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5); }
+  .doc.a { left: 10px; top: 20px; --r: -4deg; }
+  .doc.b { left: 330px; top: 250px; --r: 3deg; }
+  .doc { animation: deal 0.9s var(--ease) var(--d) both; }
+  @keyframes deal { from { opacity: 0; transform: translateY(120px) rotate(calc(var(--r) * 3)) scale(0.9); } to { opacity: 1; transform: rotate(var(--r)); } }
+  .doc h3 { margin: 0 0 6px; font: 650 30px/1.2 var(--display); }
+  .doc .meta { font-size: 19px; color: #5b6578; margin-bottom: 22px; }
+  .doc .line { height: 14px; border-radius: 7px; background: #e3e8f0; margin: 12px 0; }
+  .doc .line.short { width: 60%; }
+  .doc .cite { display: inline-block; margin-top: 10px; padding: 6px 12px; border-radius: 8px; background: #e8f1fd; color: #1a5fb4; font-size: 18px; font-weight: 600; }
+  .doc .model { display: flex; align-items: center; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid #e3e8f0; font-size: 20px; font-weight: 600; color: #34405a; }
+  .doc .model i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+  .stamp { position: absolute; right: -18px; top: -22px; padding: 10px 18px; border: 3px solid #c2410c; border-radius: 10px; color: #c2410c;
+           background: #fff7ed; font: 800 20px/1 var(--text-face); letter-spacing: 0.08em; text-transform: uppercase;
+           animation: stamp 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) var(--s) both; }
+  @keyframes stamp { from { opacity: 0; transform: rotate(8deg) scale(2.2); } to { opacity: 1; transform: rotate(8deg) scale(1); } }
+
+  /* Scene 4: act */
+  .act-visual { position: relative; height: 780px; }
+  .act-visual .window { position: absolute; left: 0; top: 70px; width: 940px; }
+  .act-visual .window img { animation: kenburns 4.4s linear var(--d) both; transform-origin: 30% 30%; }
+  @keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.06); } }
+  .ring { position: absolute; left: 368px; top: 158px; width: 194px; height: 98px; border-radius: 12px; border: 4px solid var(--amber);
+          box-shadow: 0 0 30px rgba(255, 200, 92, 0.7); animation: pop 0.5s var(--ease) var(--d) both; }
+  .board { position: absolute; right: -40px; bottom: -10px; width: 470px; padding: 26px 28px; border-radius: 18px;
+           background: #10204a; border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6); }
+  .board .title { font: 650 28px/1.2 var(--display); margin-bottom: 4px; }
+  .board .by { font-size: 18px; color: var(--muted); margin-bottom: 18px; }
+  .row { position: relative; display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-top: 10px; border-radius: 10px;
+         background: rgba(255, 255, 255, 0.06); font-size: 21px; overflow: hidden; }
+  .row .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--red); flex: none; }
+  .row.done { animation: closeRow 0.6s ease var(--c) both; }
+  .row.done .dot { animation: toGreen 0.3s ease var(--c) both; }
+  .row.done::after { content: ''; position: absolute; left: 44px; right: 60px; top: 50%; height: 2px; background: var(--text);
+                     transform-origin: left; animation: strike 0.4s ease var(--c) both; }
+  .row .tick { position: absolute; right: 16px; color: var(--green); font-size: 26px; font-weight: 800; animation: pop 0.4s var(--ease) var(--c) both; }
+  @keyframes strike { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes toGreen { to { background: var(--green); } }
+  @keyframes closeRow { from { opacity: 1; } to { opacity: 0.45; } }
+
+  /* Scene 5: the architecture in your tenant, then your guardrails lighting it up. Each guardrail turns the part of
+     the diagram (.arch) it protects green (--h). */
+  .arch { position: absolute; left: 900px; top: 0; bottom: 90px; width: 920px; display: flex; align-items: center;
+          animation: rise 0.8s var(--ease) 17950ms both, sceneOut 0.5s ease-in 25000ms forwards; }
+  .tenant { position: relative; width: 100%; padding: 46px 26px 26px; border: 2px dashed rgba(255, 255, 255, 0.3); border-radius: 26px;
+            background: rgba(8, 17, 38, 0.55); animation: guard 0.6s ease var(--h) forwards; }
+  .tenant-label { position: absolute; left: 26px; top: -21px; display: flex; align-items: center; gap: 10px; padding: 8px 18px;
+                  border-radius: 999px; background: #10204a; border: 1px solid rgba(255, 255, 255, 0.2); font: 600 21px/1 var(--text-face);
+                  animation: fade 0.6s ease 18150ms both; }
+  .tenant-label svg { width: 22px; height: 22px; }
+  .band { position: relative; padding: 16px 20px 18px; border-radius: 16px; border: 1px solid rgba(var(--rgb), 0.45);
+          background: rgba(var(--rgb), 0.08); animation: pop 0.6s var(--ease) var(--d) both, guard 0.6s ease var(--h) forwards; }
+  .band.m365 { --rgb: 63, 208, 187; }
+  .band.pp { --rgb: 184, 150, 255; }
+  .band.az { --rgb: 90, 169, 255; }
+  .band-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .band-name { font: 600 19px/1 var(--text-face); letter-spacing: 0.1em; text-transform: uppercase; color: rgb(var(--rgb)); }
+  .band-tag { font-size: 18px; color: var(--muted); }
+  .nodes { display: flex; flex-wrap: wrap; gap: 10px; }
+  .node { position: relative; display: inline-flex; align-items: center; gap: 9px; padding: 10px 14px; border-radius: 12px;
+          background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.14); font-size: 20px; white-space: nowrap;
+          animation: pop 0.5s var(--ease) var(--d) both; }
+  .node.hl { animation: pop 0.5s var(--ease) var(--d) both, guard 0.6s ease var(--h) forwards; }
+  .node.wide { display: flex; margin-top: 12px; }
+  .node i { width: 10px; height: 10px; border-radius: 50%; background: rgb(var(--rgb)); box-shadow: 0 0 10px rgb(var(--rgb)); }
+  .flow { position: relative; width: 3px; height: 28px; margin: 6px auto 10px; background: rgba(255, 255, 255, 0.45); transform-origin: top;
+          animation: grow 0.4s ease var(--d) both; }
+  .flow::after { content: ''; position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%);
+                 border-top: 9px solid rgba(255, 255, 255, 0.45); border-left: 7px solid transparent; border-right: 7px solid transparent; }
+  @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @keyframes guard { to { border-color: var(--green); box-shadow: 0 0 0 2px rgba(79, 214, 139, 0.5), 0 0 40px rgba(79, 214, 139, 0.3); } }
+  .ok { position: absolute; top: -13px; right: -13px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+        background: var(--green); color: #05301a; font: 800 18px/1 var(--text-face); box-shadow: 0 0 18px rgba(79, 214, 139, 0.8);
+        animation: pop 0.5s var(--ease) var(--h) both; }
+  .guards { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 16px; }
+  .guards li { display: flex; align-items: center; gap: 16px; font-size: 27px; line-height: 1.25; }
+  .guards svg { flex: none; width: 34px; height: 34px; }
+
+  /* Scene 6: end card */
+  .end { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 30px; padding-bottom: 40px; }
+  .mark { display: grid; place-items: center; width: 132px; height: 132px; border-radius: 34px;
+          background: linear-gradient(135deg, #2f6fe0, #6a4fd8 60%, #3fd0bb); box-shadow: 0 30px 90px rgba(90, 120, 255, 0.5); }
+  .mark svg { width: 74px; height: 74px; }
+  .end h1 { font-size: 120px; line-height: 1; font-weight: 750; }
+  .tagline { font: 600 44px/1.2 var(--display); color: var(--muted); }
+  .tagline span { color: var(--text); }
+  .stack { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; max-width: 1760px; margin-top: 18px; }
+  .fine { position: absolute; bottom: 46px; left: 0; right: 0; text-align: center; font-size: 20px; color: rgba(168, 181, 204, 0.8); }
+
+  /* Progress through the four steps (scenes 2 to 5) */
+  .progress { position: absolute; left: 140px; bottom: 60px; display: flex; gap: 24px; font: 600 20px/1 var(--text-face);
+              letter-spacing: 0.14em; text-transform: uppercase; color: rgba(168, 181, 204, 0.55);
+              animation: fade 0.5s ease 4000ms both, sceneOut 0.5s ease-in 25000ms forwards; }
+  .progress span { position: relative; min-width: 160px; padding-top: 18px; }
+  .progress span::before { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.15); }
+  .progress span.on { color: var(--text); }
+  .progress span.on::before { background: var(--teal); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="glow a"></div><div class="glow b"></div><div class="grid"></div>
+
+  <!-- 1. The hook (0 to 4.3 s) -->
+  <section class="scene s1" style="--out: 3800ms">
+    <div class="kicker in" style="--d: 150ms">Contoso University Health · 6 East</div>
+    <h1 class="in" style="--d: 400ms">Miguel is medically ready.<br><span class="red">He's still in a bed.</span></h1>
+    <div class="days">
+      <div class="day pop" style="--d: 1000ms"><div class="cell"></div><span class="label">Day 1</span><span class="event">Admitted</span></div>
+      <div class="day pop" style="--d: 1120ms"><div class="cell"></div><span class="label">Day 2</span><span class="event"></span></div>
+      <div class="day pop" style="--d: 1240ms"><div class="cell"></div><span class="label">Day 3</span><span class="event"></span></div>
+      <div class="day pop" style="--d: 1360ms"><div class="cell"></div><span class="label">Day 4</span><span class="event"></span></div>
+      <div class="day ready pop" style="--d: 1600ms"><div class="cell"></div><span class="label">Day 5</span><span class="event">Medically ready</span></div>
+      <div class="day avoid" style="--d: 2000ms"><div class="cell pop" style="--d: 2000ms"></div><span class="label fade" style="--d: 2000ms">Day 6</span><span class="event fade" style="--d: 2200ms">Avoidable bed-day</span></div>
+    </div>
+  </section>
+
+  <!-- 2. Ask (4 to 9.8 s) -->
+  <section class="scene" style="--out: 9300ms">
+    <div class="split">
+      <div class="copy">
+        <div class="step in" style="--d: 4100ms"><b>01</b>Ask</div>
+        <h2 class="in" style="--d: 4250ms">Ask where you already work.</h2>
+        <p class="sub in" style="--d: 4450ms">Discharge Navigator, an agent built in Copilot Studio, reads the live discharge plan with your permissions, in Teams, Microsoft 365 Copilot or the app.</p>
+        <div class="chips">
+          <span class="chip pop" style="--d: 7000ms; --c: var(--red)"><i></i>Prior auth · waiting on the payer</span>
+          <span class="chip pop" style="--d: 7250ms; --c: var(--amber)"><i></i>SNF bed · Maple Grove, pending auth</span>
+          <span class="chip pop" style="--d: 7500ms; --c: var(--blue)"><i></i>Wheelchair van · not started</span>
+        </div>
+      </div>
+      <div class="ask-visual slide-r" style="--d: 4200ms">
+        <div class="window"><img src="agent-chat.jpg" alt="Discharge Navigator listing Miguel Reyes's three open barriers" style="--wipe: 5800ms"></div>
+        <div class="bubble fade" style="--d: 4400ms"><span id="typed"></span><span class="caret" id="caret"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Draft (9.4 to 14 s) -->
+  <section class="scene" style="--out: 13500ms">
+    <div class="split">
+      <div class="copy">
+        <div class="step in" style="--d: 9500ms"><b>02</b>Draft</div>
+        <h2 class="in" style="--d: 9650ms">The paperwork, drafted for you.</h2>
+        <p class="sub in" style="--d: 9850ms">The agent hands each writing job to the right model deployment in Microsoft Foundry, behind Azure API Management. Clinicians review and sign.</p>
+      </div>
+      <div class="docs-visual">
+        <div class="doc a" style="--d: 9900ms">
+          <h3>SNF prior-auth packet</h3>
+          <div class="meta">Miguel Reyes · Medicare Advantage</div>
+          <div class="line"></div><div class="line"></div><div class="line short"></div>
+          <span class="cite">Cites the chart for every claim</span>
+          <div class="line"></div><div class="line short"></div>
+          <div class="model" style="--c: #2f6fe0"><i></i>gpt-5.5 · Microsoft Foundry</div>
+          <div class="stamp" style="--s: 11200ms">Draft · for review</div>
+        </div>
+        <div class="doc b" style="--d: 10350ms">
+          <h3>Instrucciones para el alta</h3>
+          <div class="meta">Patient instructions in Spanish, plain language</div>
+          <div class="line"></div><div class="line short"></div><div class="line"></div><div class="line"></div><div class="line short"></div>
+          <div class="model" style="--c: #6a4fd8"><i></i>Mistral-Large-3 <span class="preview">(preview)</span> · Microsoft Foundry</div>
+          <div class="stamp" style="--s: 11550ms">Draft · for review</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Act (13.6 to 18.3 s) -->
+  <section class="scene" style="--out: 17800ms">
+    <div class="split">
+      <div class="copy">
+        <div class="step in" style="--d: 13700ms"><b>03</b>Act</div>
+        <h2 class="in" style="--d: 13850ms">Every app works the same plan.</h2>
+        <p class="sub in" style="--d: 14050ms">A huddle board the nurse manager built by describing it. A dashboard a pro developer built in React. One copy of the data in Dataverse.</p>
+      </div>
+      <div class="act-visual">
+        <div class="window fade" style="--d: 13800ms"><img src="dashboard.jpg" alt="Discharge Command Center dashboard" style="--d: 13800ms"></div>
+        <div class="ring" style="--d: 15200ms"></div>
+        <div class="board in" style="--d: 14400ms">
+          <div class="title">📌 Barrier Tracker</div>
+          <div class="by">Built in Copilot Studio by describing it <span class="preview">(preview)</span></div>
+          <div class="row"><span class="dot"></span>SNF prior authorization</div>
+          <div class="row done" style="--c: 15400ms"><span class="dot"></span>SNF bed acceptance<span class="tick">✓</span></div>
+          <div class="row"><span class="dot"></span>Wheelchair van transport</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Deploy and govern (17.9 to 25.5 s): the architecture builds in your tenant, then each guardrail lights up
+       the part of the diagram it protects -->
+  <section class="scene" style="--out: 25000ms">
+    <div class="split">
+      <div class="copy">
+        <div class="step in" style="--d: 18000ms"><b>04</b>Deploy &amp; govern</div>
+        <h2 class="in" style="--d: 18150ms">Your tenant. Your guardrails.</h2>
+        <p class="sub in" style="--d: 18350ms">It runs in your Microsoft 365, Power Platform and Azure, signed in with your Entra ID.</p>
+        <ul class="guards">
+          <li class="in" style="--d: 19600ms"><svg viewBox="0 0 24 24" fill="none" stroke="#4fd68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>Entra ID sign-in and Conditional Access</li>
+          <li class="in" style="--d: 20050ms"><svg viewBox="0 0 24 24" fill="none" stroke="#4fd68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>Copilot activity audited in Microsoft Purview</li>
+          <li class="in" style="--d: 20500ms"><svg viewBox="0 0 24 24" fill="none" stroke="#4fd68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>A Managed Environment, under your DLP policies</li>
+          <li class="in" style="--d: 20950ms"><svg viewBox="0 0 24 24" fill="none" stroke="#4fd68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>Runs as the signed-in user, with their permissions</li>
+          <li class="in" style="--d: 21400ms"><svg viewBox="0 0 24 24" fill="none" stroke="#4fd68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>The agent can read and update, never delete</li>
+          <li class="in" style="--d: 21850ms"><svg viewBox="0 0 24 24" fill="none" stroke="#4fd68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>Managed identity to Foundry: no model keys</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- The architecture for scene 5 (17.9 to 25.5 s) -->
+  <div class="arch">
+    <div class="tenant" style="--h: 19750ms">
+      <div class="tenant-label"><svg viewBox="0 0 24 24" fill="none" stroke="#3fd0bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Your Microsoft Entra ID tenant</div>
+      <div class="band m365" style="--d: 18350ms; --h: 20200ms">
+        <div class="band-head"><span class="band-name">Microsoft 365</span><span class="band-tag">where people already work</span></div>
+        <div class="nodes">
+          <span class="node" style="--d: 18500ms"><i></i>Teams</span>
+          <span class="node" style="--d: 18580ms"><i></i>Microsoft 365 Copilot</span>
+        </div>
+        <span class="ok">✓</span>
+      </div>
+      <div class="flow" style="--d: 18700ms"></div>
+      <div class="band pp" style="--d: 18750ms; --h: 20650ms">
+        <div class="band-head"><span class="band-name">Power Platform</span><span class="band-tag">one solution · dev → test → prod</span></div>
+        <div class="nodes">
+          <span class="node hl" style="--d: 18900ms; --h: 21550ms"><i></i>Discharge Navigator agent<span class="ok">✓</span></span>
+          <span class="node" style="--d: 18980ms"><i></i>Barrier Tracker <span class="preview">(preview)</span></span>
+          <span class="node" style="--d: 19060ms"><i></i>Command Center</span>
+        </div>
+        <div class="node wide hl" style="--d: 19200ms; --h: 21100ms"><i></i>Dataverse · one copy of the discharge plan<span class="ok">✓</span></div>
+        <span class="ok">✓</span>
+      </div>
+      <div class="flow" style="--d: 19150ms"></div>
+      <div class="band az" style="--d: 19200ms; --h: 22000ms">
+        <div class="band-head"><span class="band-name">Azure</span><span class="band-tag">your subscription</span></div>
+        <div class="nodes">
+          <span class="node" style="--d: 19350ms"><i></i>API Management</span>
+          <span class="node" style="--d: 19430ms"><i></i>Foundry · gpt-5.5</span>
+          <span class="node" style="--d: 19510ms"><i></i>Foundry · Mistral-Large-3 <span class="preview">(preview)</span></span>
+        </div>
+        <span class="ok">✓</span>
+      </div>
+      <span class="ok">✓</span>
+    </div>
+  </div>
+
+  <!-- 6. End card (25.1 to 28.5 s) -->
+  <section class="scene end">
+    <div class="mark pop" style="--d: 25100ms">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12h4l2-5 4 10 2-5h6"/>
+      </svg>
+    </div>
+    <h1 class="in" style="--d: 25250ms">Discharge Navigator</h1>
+    <div class="tagline in" style="--d: 25500ms"><span>One plan.</span> Every app. One platform.</div>
+    <div class="stack">
+      <span class="chip pop" style="--d: 25850ms; --c: var(--teal)"><i></i>Microsoft 365 Copilot</span>
+      <span class="chip pop" style="--d: 25950ms; --c: var(--teal)"><i></i>Teams</span>
+      <span class="chip pop" style="--d: 26050ms; --c: var(--purple)"><i></i>Copilot Studio</span>
+      <span class="chip pop" style="--d: 26150ms; --c: var(--purple)"><i></i>Power Apps</span>
+      <span class="chip pop" style="--d: 26250ms; --c: var(--purple)"><i></i>Dataverse</span>
+      <span class="chip pop" style="--d: 26350ms; --c: var(--blue)"><i></i>Microsoft Foundry</span>
+      <span class="chip pop" style="--d: 26450ms; --c: var(--blue)"><i></i>Azure API Management</span>
+    </div>
+    <div class="fine fade" style="--d: 26600ms">Synthetic data for demonstration · AI output is a draft that clinicians review and sign</div>
+  </section>
+
+  <div class="progress" id="progress"><span>01 Ask</span><span>02 Draft</span><span>03 Act</span><span>04 Deploy &amp; govern</span></div>
+</div>
+
+<script>
+  const DURATION = 28500;
+  const QUESTION = "What's still blocking Miguel Reyes?";
+  const TYPE_START = 4550;
+  const TYPE_MS_PER_CHAR = 34;
+  const STEPS = [4000, 9400, 13600, 17900];
+
+  const stage = document.getElementById('stage');
+  const typed = document.getElementById('typed');
+  const caret = document.getElementById('caret');
+  const steps = [...document.querySelectorAll('#progress span')];
+  const isCapture = new URLSearchParams(location.search).has('capture');
+
+  // The parts CSS can't do: the typed question, the blinking caret and the step indicator.
+  function update(ms) {
+    const chars = Math.max(0, Math.min(QUESTION.length, Math.floor((ms - TYPE_START) / TYPE_MS_PER_CHAR)));
+    typed.textContent = QUESTION.slice(0, chars);
+    const isTyping = chars < QUESTION.length;
+    caret.style.opacity = isTyping || Math.floor(ms / 450) % 2 === 0 ? '1' : '0';
+    const active = STEPS.findLastIndex((start) => ms >= start);
+    steps.forEach((step, i) => step.classList.toggle('on', i === active));
+  }
+
+  /** Shows the frame at ms. Used by the frame-by-frame render. */
+  function seek(ms) {
+    document.getAnimations().forEach((a) => {
+      a.pause();
+      a.currentTime = ms;
+    });
+    update(ms);
+  }
+
+  function fit() {
+    const scale = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.setProperty('--scale', String(scale));
+  }
+
+  window.seek = seek;
+  if (isCapture) {
+    seek(0);
+  } else {
+    fit();
+    addEventListener('resize', fit);
+    const started = performance.now();
+    const tick = () => {
+      const ms = performance.now() - started;
+      update(ms);
+      if (ms < DURATION) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    // Click to replay from the start.
+    stage.addEventListener('click', () => location.reload());
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+WEBVTT
+
+00:00:00.300 --> 00:00:04.518
+Discharge Navigator. One plan, every app, one platform.
+
+00:00:05.433 --> 00:00:16.629
+Discharge planning, at an academic medical center. Once a patient is medically ready, every extra day in a bed is avoidable, and prior-auth delays add more.
+
+00:00:16.979 --> 00:00:24.771
+Discharge Navigator puts an agent and apps on one discharge plan, so everyone sees what's blocking a discharge, and clears it sooner.
+
+00:00:25.433 --> 00:00:28.927
+Miguel is medically ready, but he's still in a bed.
+
+00:00:29.433 --> 00:00:32.759
+Ask the agent what's blocking him, right where you already work.
+
+00:00:34.833 --> 00:00:38.403
+It drafts the paperwork, for clinicians to review and sign.
+
+00:00:38.933 --> 00:00:41.201
+And every app works from the same plan.
+
+00:00:43.233 --> 00:00:46.938
+All of it runs in your own tenant, under your own guardrails.
+
+00:00:50.533 --> 00:00:53.241
+Now let's see it work, in seven steps.
+
+00:00:55.633 --> 00:01:09.733
+Meet the cast: a case manager; Discharge Navigator, the agent; two model deployments in Foundry that write the drafts, behind API Management; Dataverse, the one copy of the plan; and two apps on that plan.
+
+00:01:10.083 --> 00:01:14.639
+Our patient: Miguel Reyes. Medically ready, still in a bed.
+
+00:01:15.433 --> 00:01:26.044
+Chapter one. First, Microsoft 365 Copilot on its own: no agent, nothing built yet. It answers from the case manager's own email and chats.
+
+00:01:26.533 --> 00:01:29.807
+We start in Microsoft 365 Copilot Chat.
+
+00:01:30.467 --> 00:01:37.869
+Work IQ is Copilot's work context: email, chats, meetings and files, through Graph, with the user's own permissions.
+
+00:01:38.567 --> 00:01:43.812
+The model picker is on Auto, so Copilot picks the right model for each question.
+
+00:01:44.467 --> 00:01:50.657
+This is Copilot Chat. Cowork and Code, the other two modes, are a click away.
+
+00:01:51.267 --> 00:01:56.905
+On the left: new chats, search, the library, agents, and recent chats.
+
+00:01:57.567 --> 00:02:04.327
+And the first prompt, in plain words: what's holding up Miguel Reyes's discharge, and what did I miss over email?
+
+00:02:05.267 --> 00:02:08.965
+Copilot searches the case manager's mail and chats through Graph.
+
+00:02:15.100 --> 00:02:21.591
+The hold-up: the skilled nursing facility's prior authorization, waiting on an updated PT note.
+
+00:02:22.200 --> 00:02:28.709
+The payer wants PT notes with ambulation distance and level of assist. Remember that for chapter three.
+
+00:02:29.400 --> 00:02:33.355
+And Maple Grove can take him tomorrow, once the authorization comes through.
+
+00:02:34.400 --> 00:02:39.279
+Each point links to the email it came from: Maple Grove's reply, then the payer's.
+
+00:02:40.600 --> 00:02:44.993
+So far, that's Copilot out of the box. Nothing has been built yet.
+
+00:02:47.000 --> 00:02:58.079
+Chapter two: an agent built for the job. Discharge Navigator, made in Copilot Studio, reads the discharge plan in Dataverse, as the signed-in user.
+
+00:02:58.600 --> 00:03:03.613
+Same window. This time, the case manager opens Agents and Skills.
+
+00:03:04.267 --> 00:03:10.550
+Agents and Skills lists what they can use here: Microsoft's own agents, and the ones their organization builds.
+
+00:03:11.167 --> 00:03:16.499
+Discharge Navigator was built in Copilot Studio and published here, right where they already work.
+
+00:03:20.000 --> 00:03:24.611
+They ask: which of my patients are medically ready for discharge, but still here?
+
+00:03:24.967 --> 00:03:31.869
+It reads Dataverse through its MCP server, signed in as the user, so it sees only what they can see.
+
+00:03:32.467 --> 00:03:37.907
+Five patients, from the plan of record in Dataverse. Miguel Reyes has waited two days.
+
+00:03:38.267 --> 00:03:41.304
+Then: what's holding up Miguel's discharge?
+
+00:03:43.267 --> 00:03:48.699
+Three barriers: the prior authorization, the placement at Maple Grove, and transport.
+
+00:03:49.049 --> 00:03:53.572
+The main dependency is the updated PT note the payer asked for in chapter one.
+
+00:03:53.922 --> 00:03:59.257
+And it can read and update a plan, but every tool that could delete is switched off.
+
+00:04:00.400 --> 00:04:10.171
+Chapter three: behind the scenes, in Copilot Studio. A tour of how the agent is built, then two drafts from two model deployments in Microsoft Foundry.
+
+00:04:10.700 --> 00:04:16.273
+This is Copilot Studio, where the agent is built. Open Agents, then Discharge Navigator.
+
+00:04:19.500 --> 00:04:26.169
+The instructions give it its job in plain language: who it helps, where the data lives, and the rules it follows.
+
+00:04:26.800 --> 00:04:31.591
+Channels: it's published to Teams and Microsoft 365 Copilot.
+
+00:04:32.200 --> 00:04:46.719
+Skills are recipes for two jobs: patient instructions, and the prior-auth packet. Each one reads the chart in Dataverse, then hands the writing to a model deployment in Microsoft Foundry, formerly Azure AI Foundry.
+
+00:04:47.400 --> 00:04:54.551
+Tools are how it reaches other systems: Dataverse for the plan, and the model deployments in Foundry for the drafts.
+
+00:04:55.200 --> 00:04:59.236
+There are no documents to search. The facts come from Dataverse.
+
+00:05:00.100 --> 00:05:03.667
+It could hand work to other agents. This one works on its own.
+
+00:05:05.000 --> 00:05:09.193
+And memory, in preview, is switched off for this agent.
+
+00:05:10.100 --> 00:05:13.213
+Then a choice of model for the agent itself, picked from a list.
+
+00:05:17.467 --> 00:05:22.382
+Publish once, and it's live in Teams and Microsoft 365 Copilot.
+
+00:05:22.967 --> 00:05:26.564
+Now: draft Miguel Reyes's patient instructions.
+
+00:05:28.100 --> 00:05:33.416
+A skill reads his chart in Dataverse, then hands the writing to a model deployment in Foundry.
+
+00:05:34.333 --> 00:05:40.013
+The skill sent his chart to the patient-summary model deployment: Mistral Large 3, in preview.
+
+00:05:40.633 --> 00:05:49.296
+It's in Spanish because his chart lists Spanish as his preferred language. So he gets instructions in plain words he can follow at home.
+
+00:05:50.200 --> 00:05:54.121
+His medicines, his next steps, and teach-back questions.
+
+00:05:54.833 --> 00:05:57.331
+It's a draft his nurse reviews and signs.
+
+00:05:58.167 --> 00:06:00.890
+Next, the prior-auth packet for the payer.
+
+00:06:02.667 --> 00:06:10.595
+A different job, so a different model: gpt-5.5. It's a draft for the case manager. Nothing is sent.
+
+00:06:11.600 --> 00:06:17.900
+It answers the payer's question from chapter one, quoting his chart, with the field each fact came from.
+
+00:06:18.600 --> 00:06:27.217
+And it flags the gap: no dated, signed PT note yet. A draft for the case manager to finish, not a submission.
+
+00:06:28.200 --> 00:06:31.476
+And it asks before saving anything to his plan.
+
+00:06:35.300 --> 00:06:48.780
+Chapter four: a pro developer's app. The Discharge Command Center is a Power Apps code app, written in React, with the same agent built in. This time, it saves the prior-auth packet to the plan.
+
+00:06:49.300 --> 00:06:56.173
+This is leadership's house-wide view of discharges: the Command Center, a code app a pro developer built in React.
+
+00:06:56.833 --> 00:07:06.822
+Across the house: discharges expected today, patients medically ready but still here, open barriers, prior-auth turnaround, and readmission risk.
+
+00:07:07.433 --> 00:07:12.458
+Where the barriers are, by type, and the avoidable bed-days, by unit.
+
+00:07:13.133 --> 00:07:18.164
+And every active plan, sorted by avoidable days. Select one for the detail.
+
+00:07:19.133 --> 00:07:25.293
+Select Miguel, and his whole plan opens: his chart, the agent's drafts, and his tasks and barriers.
+
+00:07:28.333 --> 00:07:35.484
+His plan of record in Dataverse: diagnosis, destination, payer, language, and his hospital course.
+
+00:07:36.133 --> 00:07:39.480
+The agent's drafts land here. There's no prior-auth packet yet.
+
+00:07:40.833 --> 00:07:45.570
+And his tasks and barriers, each with an owner, a due date and a status.
+
+00:07:50.133 --> 00:07:55.830
+The same agent is built into the app. What's still blocking Miguel Reyes?
+
+00:07:57.733 --> 00:08:03.166
+Three barriers: the prior authorization, the placement at Maple Grove, and transport.
+
+00:08:03.500 --> 00:08:07.628
+Then: draft his prior-auth packet, and save it to his record.
+
+00:08:13.300 --> 00:08:22.706
+The same skill as in chapter three wrote it, with gpt-5.5, the prior-auth model deployment in Foundry. A draft, not submitted.
+
+00:08:26.200 --> 00:08:28.859
+And this time it saves the draft to his record.
+
+00:08:29.200 --> 00:08:31.830
+Back in the app, the packet is on his plan.
+
+00:08:37.333 --> 00:08:42.554
+Marked as a draft, saved by Discharge Navigator, for a clinician to review and sign.
+
+00:08:43.233 --> 00:08:45.978
+Every fact cites where it came from in his chart.
+
+00:08:48.433 --> 00:08:54.022
+One plan in Dataverse: this dashboard, the agent and every other app see the same rows.
+
+00:08:55.167 --> 00:09:02.097
+Chapter five: the morning huddle on 6 East, run from Barrier Tracker, the nurse manager's board on the same plan.
+
+00:09:05.467 --> 00:09:08.822
+The 6 East nurse manager runs the morning huddle from her board.
+
+00:09:09.767 --> 00:09:13.840
+Maple Grove has accepted Miguel, so she adds a note, right on the barrier.
+
+00:09:16.767 --> 00:09:19.256
+Then marks the bed acceptance completed.
+
+00:09:21.067 --> 00:09:26.645
+Nine open barriers become eight. It's the same row the agent and the Command Center read.
+
+00:09:27.800 --> 00:09:40.561
+Chapter six: the reveal. Nobody filed a ticket for that board, and nobody wrote any code. First, the request she typed. Then the build, sped up.
+
+00:09:41.400 --> 00:09:46.562
+The reveal: she built Barrier Tracker herself, from this one request.
+
+00:09:46.912 --> 00:09:53.310
+Plain language: what the huddle needs to see, the tables it should use, and that nobody can delete anything.
+
+00:09:55.000 --> 00:10:03.125
+She starts on App, in preview, in Copilot Studio: describe the app you want, in plain words, and it builds it.
+
+00:10:06.100 --> 00:10:09.609
+She pastes her request into Apps in Copilot Studio.
+
+00:10:09.967 --> 00:10:16.435
+It finds the hospital's discharge tables in Dataverse, builds the app, checks a live read, and publishes it.
+
+00:10:18.267 --> 00:10:22.634
+This is real hospital data: 6 East's open discharge barriers.
+
+00:10:23.000 --> 00:10:27.658
+And it reads that data as her, so it can't see anything she couldn't already see.
+
+00:10:30.667 --> 00:10:34.364
+And there's Barrier Tracker, the board from the huddle. No code.
+
+00:10:34.867 --> 00:10:38.623
+Even if you know nothing about building apps, you can describe one.
+
+00:10:39.767 --> 00:10:50.216
+Chapter seven: how it all fits together. One Entra ID tenant, one discharge plan in Dataverse, and every piece you just saw, working on the same rows.
+
+00:10:50.967 --> 00:10:54.725
+One discharge plan, one tenant, one set of governance.
+
+00:10:55.867 --> 00:11:04.198
+Microsoft 365 is where people already work: Teams and Copilot. Graph holds the case manager's mail and chats.
+
+00:11:04.867 --> 00:11:10.944
+The agent, in Copilot Studio: instructions, two skills, and tools for Dataverse and Foundry.
+
+00:11:11.567 --> 00:11:17.317
+Dataverse holds one copy of the discharge plan. The agent and every app use the same rows.
+
+00:11:17.967 --> 00:11:23.213
+On those rows: the pro developer's Command Center, and the nurse manager's Barrier Tracker.
+
+00:11:23.867 --> 00:11:33.070
+In Azure, API Management is the only door to the two model deployments in Foundry. It signs in with its own identity, so there are no keys.
+
+00:11:33.767 --> 00:11:39.337
+Everything ships as one solution, in a Managed Environment, under your governance.
+
+00:11:39.967 --> 00:11:46.081
+And it's all one Entra ID tenant, across Microsoft 365, Power Platform and Azure.
+
+00:11:47.367 --> 00:11:50.705
+One plan. Every app. One platform.
+
+00:11:51.055 --> 00:11:59.026
+The voice you've heard is Grant, from Microsoft's MAI-Voice-2.1 model, in preview in Azure Speech.

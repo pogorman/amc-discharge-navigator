@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User guide · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html" aria-current="page">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="user-guide">User guide</h1>
+<p>For anyone presenting the demo: the apps and the screens. The run of show is the <a href="demo-script.html">demo script</a>. To change how it works, see the <a href="technical-guide.html">technical guide</a>.</p>
+
+<h2 id="open-the-apps">Open the apps</h2>
+<p>Sign in everywhere as <code>admin@&lt;tenant&gt;.onmicrosoft.com</code> (tenant <code>&lt;tenant-id&gt;</code>).</p>
+<div class="tablewrap"><table>
+  <tr><th>What</th><th>Where</th><th>Notes</th></tr>
+  <tr><td><b>Discharge Command Center</b> (Code App)</td><td><a href="https://apps.powerapps.com/play/e/&lt;environment-id&gt;/app/a1951694-de5a-4196-a0b9-8145e3e4645c?tenantId=&lt;tenant-id&gt;" target="_blank" rel="noopener">Open in Power Apps</a></td><td>The first time, Power Apps asks you to allow the Dataverse connection. Allow it.</td></tr>
+  <tr><td><b>Discharge Navigator</b> (agent)</td><td>Teams and Microsoft 365 Copilot</td><td>Both channels are on. The first Dataverse call in Teams can ask you to sign in, because the tool uses your identity (<a href="known-issues.html#ki-23">KI-23</a>).</td></tr>
+  <tr><td>The agent's build view and Test pane</td><td>Copilot Studio, environment og-svc &gt; <b>Discharge Navigator</b></td><td>Used in beat 3. Details: <a href="copilot-studio.html">Copilot Studio</a>.</td></tr>
+  <tr><td>Foundry deployments</td><td>Foundry portal &gt; <code>cuh-discharge-foundry2</code> &gt; Deployments</td><td><code>patient-summary</code> and <code>prior-auth</code>. Details: <a href="foundry.html">Foundry</a>.</td></tr>
+  <tr><td>App builder</td><td>Copilot Studio (New experience on) &gt; Home &gt; <b>App (preview)</b></td><td>Where Barrier Tracker was built, from the prompt on <a href="deck.html#prompt">the deck's request slide</a> (<a href="decisions.html#adr-0014">ADR-0014</a>). Beat 4 uses the published app; beat 6 plays a recording of the build (<a href="decisions.html#adr-0016">ADR-0016</a>).</td></tr>
+</table></div>
+
+<h2 id="the-screens">The screens</h2>
+<h3>Discharge Command Center</h3>
+<p>One screen: "Discharge Command Center, Contoso University Health · house-wide discharge and barrier view", with <b>Ask Discharge Navigator</b> and the app version on the right.</p>
+<div class="tablewrap"><table>
+  <tr><th>Element</th><th>Meaning</th></tr>
+  <tr><td><b>Ask Discharge Navigator</b></td><td>Opens a chat with the same agent as in Teams, as you, with three starter questions. Replies take about 15 to 30 seconds. <b>New chat</b> starts over. The dashboard reloads after each reply, because the agent can save drafts to a plan.</td></tr>
+  <tr><td><b>Unit tabs</b></td><td>All units, or one unit. Every tile, panel and row follows the selected unit.</td></tr>
+  <tr><td><b>Updated / Refresh</b></td><td>When the data was loaded. Refresh reloads it from Dataverse, for example after someone closes a barrier in Teams.</td></tr>
+  <tr><td><b>KPI tiles</b></td><td>Expected discharges today · Medically ready, still here (with avoidable bed-days) · Open discharge barriers · Prior-auth turnaround (median, approvals in the last 14 days) · High readmission risk (LACE ≥ 10). A red top edge means there's something to act on.</td></tr>
+  <tr><td><b>Open barriers by type</b></td><td>Barrier tasks not yet completed, grouped by task type.</td></tr>
+  <tr><td><b>Avoidable bed-days by unit</b></td><td>Days since medically ready, for patients still in house.</td></tr>
+  <tr><td><b>Plans table</b></td><td>Patient, unit and bed, plan status, destination, expected discharge, avoidable days, open barriers, readmission risk. Sorted by avoidable days. Select a row for detail.</td></tr>
+  <tr><td><b>Plan drawer</b></td><td>Chart facts and the hospital course, then <b>Agent drafts</b>, then <b>Tasks and barriers</b>.</td></tr>
+  <tr><td><b>Agent drafts</b></td><td>The patient instructions (with a Not Started / Draft / Signed badge) and the prior-auth packet that Discharge Navigator saved to the plan. "Saved by Discharge Navigator. Draft for clinician review and signature." <b>Reload</b> pulls in a draft saved while the drawer is open.</td></tr>
+  <tr><td><b>Tasks and barriers</b></td><td>Open barriers have a red edge and a Barrier badge. Each task shows its status, owner role, assignee, external party, due date and notes. <b>Mark complete</b> closes a task (the app's only write).</td></tr>
+</table></div>
+<h3>Discharge Navigator in Teams or Microsoft 365 Copilot</h3>
+<p>A chat. It answers from live Dataverse through the Dataverse MCP server, with your permissions. The two drafting skills end with a <code>Model:</code> line that names the model deployment's <code>model</code> field, and every draft says it's for clinician review. When the agent offers to save a draft to the plan, say yes; that's what the Command Center shows.</p>
+
+<h2 id="demo-script">Demo script</h2>
+<p>The run of show is on its own page now: the <a href="demo-script.html">demo script</a>. It has the checklist for before you record, the numbers to expect, narration guardrails, preview and GA callouts, the opening on the deck, all 7 beats with prompts to copy, the Barrier Tracker rehearsal, fallbacks, and what to do afterwards.</p>
+</main>
+</body>
+</html>

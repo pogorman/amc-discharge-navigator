@@ -1,0 +1,21 @@
+﻿{
+  "connectorid": "ca262a95-d4c8-f111-aaaf-000d3a367aeb",
+  "name": "new_foundry-20deployments",
+  "displayname": "Foundry Deployments",
+  "description": "",
+  "connectorinternalid": "shared_new-5ffoundry-20deployments-5fa6b26604e9b050ca",
+  "openapidefinition": "connectors/new_foundry-20deployments-ca262a95-d4c8-f111-aaaf-000d3a367aeb/openapidefinition.json",
+  "connectionparameters": "connectors/new_foundry-20deployments-ca262a95-d4c8-f111-aaaf-000d3a367aeb/connectionparameters.json",
+  "connectionparametersets": "",
+  "policytemplateinstances": "connectors/new_foundry-20deployments-ca262a95-d4c8-f111-aaaf-000d3a367aeb/policytemplateinstances.json",
+  "iconbrandcolor": "#0F6CBD",
+  "iconblob": null,
+  "connectortype": 1,
+  "statecode": 0,
+  "statuscode": 1,
+  "ismanaged": false,
+  "componentstate": 0,
+  "createdon": "2026-11-01T15:49:27Z",
+  "modifiedon": "2026-11-01T15:49:41Z",
+  "versionnumber": 9154953
+}

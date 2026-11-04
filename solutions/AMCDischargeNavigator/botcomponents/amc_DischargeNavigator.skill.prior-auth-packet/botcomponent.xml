@@ -1,0 +1,11 @@
+<botcomponent schemaname="amc_DischargeNavigator.skill.prior-auth-packet">
+  <componenttype>9</componenttype>
+  <description>Drafts a prior authorization packet for post-acute care (skilled nursing facility, inpatient rehab, home health) from the chart by calling the Foundry prior-auth model deployment. Use when the user asks for a prior auth packet, an authorization request, or clinical justification for a payer.</description>
+  <iscustomizable>0</iscustomizable>
+  <name>prior-auth-packet</name>
+  <parentbotid>
+    <schemaname>amc_DischargeNavigator</schemaname>
+  </parentbotid>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+</botcomponent>

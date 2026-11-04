@@ -1,0 +1,1158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deck · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+<style>
+  /* Slide deck: the visual aid for O'G's narration. It follows the demo video (assets/demo-video.mp4) slide for slide:
+     each slide's data-seg names its stretch of the video, and scripts/build_demo_video.py checks the order, writes the
+     card slides and each slide's place in the video (data-start, data-end) on every build. The notes are the deck's own.
+     Slides are 16:9 and scale with the window; everything inside a slide is sized in cqw (1cqw = 1% of the slide's width). */
+  :root {
+    --layer-m365: var(--amber); --layer-cs: var(--cs); --layer-azure: var(--foundry); --layer-pp: var(--accent);
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --text-face: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  html, body { height: 100%; }
+  body.deck-page { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  main.deck { flex: 1; min-height: 0; max-width: none; margin: 0; padding: 14px 16px 10px;
+              display: flex; flex-direction: column; gap: 10px; }
+
+  .stage { flex: 1; min-height: 0; container-type: size; display: grid; place-items: center; }
+  .slide { display: none; position: relative; width: min(100cqw, 100cqh * 16 / 9); aspect-ratio: 16 / 9; container-type: inline-size;
+           background: var(--card); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
+  .slide.is-current { display: block; }
+  .slide .notes { display: none; }
+
+  .frame { height: 100%; display: flex; flex-direction: column; padding: 5cqw 6cqw 4.4cqw;
+           font-family: var(--text-face); color: var(--text); }
+  .frame h1 { font: 600 4.6cqw/1.08 var(--display); letter-spacing: -0.015em; margin: 0; max-width: 24ch; }
+  .frame h2 { font: 600 1.35cqw/1.3 var(--text-face); color: var(--muted); border: 0; padding: 0; margin: 0 0 0.7cqw; }
+  .frame p { margin: 0; }
+  /* Content slides: smaller title, more room for the body */
+  .frame.compact { padding-top: 4cqw; padding-bottom: 3.6cqw; }
+  .frame.compact h1 { font-size: 3.4cqw; max-width: none; }
+
+  /* The video's background (the hero video's): navy, two color washes, two soft glows and a faint grid */
+  .frame.plate { position: relative; color: #f3f6fb;
+                 background: radial-gradient(circle 22cqw at 10.4% 71%, rgba(29, 111, 214, 0.3), transparent),
+                             radial-gradient(circle 20cqw at 90.6% 13%, rgba(106, 63, 209, 0.3), transparent),
+                             radial-gradient(62% 74% at 15% 10%, #13306b 0%, transparent 60%),
+                             radial-gradient(52% 65% at 90% 90%, #2a1a5c 0%, transparent 60%), #081126; }
+  .frame.plate::before { content: ''; position: absolute; inset: 0; opacity: 0.07; pointer-events: none;
+                         background-image: linear-gradient(#f3f6fb 1px, transparent 1px), linear-gradient(90deg, #f3f6fb 1px, transparent 1px);
+                         background-size: 3.33cqw 3.33cqw; mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 75%); }
+
+  /* The title card: the hero video's end card, which opens and closes the demo video */
+  .frame.cover { align-items: center; justify-content: center; text-align: center; gap: 1.56cqw; padding: 0 4cqw 2.08cqw; }
+  .cover .mark { display: grid; place-items: center; width: 6.875cqw; height: 6.875cqw; border-radius: 1.77cqw;
+                 background: linear-gradient(135deg, #2f6fe0, #6a4fd8 60%, #3fd0bb); box-shadow: 0 1.56cqw 4.69cqw rgba(90, 120, 255, 0.5); }
+  .cover .mark svg { width: 3.85cqw; height: 3.85cqw; }
+  .frame.cover h1 { font-size: 6.25cqw; font-weight: 750; line-height: 1; letter-spacing: -0.02em; max-width: none; }
+  .cover .tagline { font: 600 2.29cqw/1.2 var(--display); color: #a8b5cc; }
+  .cover .tagline span { color: #f3f6fb; }
+  .cover .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.73cqw; margin-top: 0.94cqw; }
+  .cover .chips span { display: inline-flex; align-items: center; gap: 0.52cqw; padding: 0.52cqw 0.94cqw; border-radius: 999px; white-space: nowrap;
+                       background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 1.15cqw; }
+  .cover .chips i { width: 0.52cqw; height: 0.52cqw; border-radius: 50%; background: var(--c); box-shadow: 0 0 0.63cqw var(--c); }
+  .cover .fine { position: absolute; left: 0; right: 0; bottom: 2.4cqw; font-size: 1.04cqw; color: rgba(168, 181, 204, 0.8); }
+
+  /* Card slides: the video's chapter cards, "What you'll see" cards and the card into the details, at the video's sizes and
+     places (its pixels / 19.2) in the fonts it draws with. build_demo_video.py writes them, so edit their text there. */
+  .frame.vcard { display: block; padding: 0; font-family: "Segoe UI", system-ui, sans-serif; line-height: normal; }
+  .vcard > * { position: absolute; left: 9.375cqw; margin: 0; white-space: nowrap; color: inherit; }
+  .vcard .v-num { left: 8.958cqw; top: 8.854cqw; font-size: 11.979cqw; font-weight: 900;
+                  background: linear-gradient(135deg, #2f6fe0, #6a4fd8 50%, #3fd0bb); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .vcard .v-kicker { font-size: 1.25cqw; font-weight: 600; letter-spacing: 0.26cqw; text-transform: uppercase; color: #3fd0bb; }
+  .vcard h1.v-title { left: 9.063cqw; font-family: inherit; font-weight: 700; line-height: normal; letter-spacing: 0; max-width: none; }
+  .vcard .v-lines p { font-size: 1.875cqw; line-height: 1.5; }
+  .vcard .v-pills { display: flex; gap: 0.833cqw; }
+  .vcard .v-pills span { position: relative; display: inline-flex; align-items: center; height: 2.813cqw; padding: 0 1.042cqw 0 2.396cqw;
+                         border-radius: 1.5cqw; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.18); font-size: 1.354cqw; }
+  .vcard .v-pills span::before { content: ''; position: absolute; left: 1.146cqw; top: calc(50% - 0.3125cqw); width: 0.625cqw; height: 0.625cqw;
+                                 border-radius: 50%; background: #3fd0bb; }
+  .vcard .v-row { top: 49.479cqw; display: flex; gap: 1.354cqw; list-style: none; padding: 0; }
+  .vcard .v-row li { width: 10.417cqw; margin: 0; font-size: 0.9375cqw; font-weight: 600; letter-spacing: 0.13cqw; text-transform: uppercase;
+                     color: rgba(168, 181, 204, 0.6); }
+  .vcard .v-row li::before { content: ''; display: block; height: 0.208cqw; border-radius: 0.104cqw; margin-bottom: 0.729cqw;
+                             background: rgba(255, 255, 255, 0.16); }
+  .vcard .v-row .done::before { background: rgba(255, 255, 255, 0.45); }
+  .vcard .v-row .now { color: #f3f6fb; }
+  .vcard .v-row .now::before { background: #3fd0bb; }
+  .vcard.card .v-kicker { top: 24.479cqw; }
+  .vcard.card h1.v-title { left: 9.167cqw; top: 26.823cqw; }
+  .vcard.card .v-pills { top: 34.375cqw; }
+  .vcard.brief .v-kicker { top: 17.708cqw; }
+  .vcard.brief h1.v-title { top: 20.052cqw; }
+  .vcard.brief .v-lines { top: 26.4cqw; }
+  .vcard.brief .v-pills { top: 35.938cqw; }
+  .vcard.next .v-kicker { top: 18.75cqw; }
+  .vcard.next h1.v-title { top: 21.094cqw; }
+  .vcard.next .v-lines { top: 29.35cqw; }
+  .vcard.next .v-lines p { font-size: 1.771cqw; line-height: 1.41; color: #a8b5cc; }
+
+  /* The use-case and cast cards lay out in flow, at the video's sizes */
+  .vcard.intro, .vcard.cast { display: flex; flex-direction: column; padding: 0 9.375cqw; }
+  .vcard.intro > *, .vcard.cast > * { position: static; left: auto; white-space: normal; }
+  .vcard.intro { justify-content: center; padding-bottom: 2cqw; }
+  .vcard b { font-weight: 700; color: #3fd0bb; }
+  .vcard .v-label { font-size: 1.042cqw; font-weight: 600; letter-spacing: 0.18cqw; text-transform: uppercase; color: #a8b5cc; margin-bottom: 1.1cqw; }
+  .vcard.intro .v-kicker { margin-bottom: 1.4cqw; }
+  .vcard.intro h1.v-title { margin-left: -0.3cqw; }
+  .vcard .v-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2.1cqw; margin-top: 4.4cqw; }
+  .vcard .v-cols p:not(.v-label) { font-size: 1.771cqw; line-height: 1.47; }
+  .vcard .v-solution { position: relative; margin-top: 3.4cqw; padding: 1.45cqw 2.1cqw 1.5cqw; border-radius: 1.15cqw;
+                       background: rgba(255, 255, 255, 0.063); border: 1px solid rgba(255, 255, 255, 0.19); }
+  .vcard .v-solution::before { content: ''; position: absolute; left: 0; top: 1.04cqw; bottom: 1.04cqw; width: 0.31cqw;
+                               border-radius: 0.16cqw; background: #3fd0bb; }
+  .vcard .v-solution .v-label { color: #3fd0bb; }
+  .vcard .v-solution p:not(.v-label) { font-size: 1.875cqw; line-height: 1.44; }
+  .vcard.cast { padding-top: 4.6cqw; }
+  .vcard.cast .v-kicker { margin-bottom: 0.4cqw; }
+  .vcard .v-cast { list-style: none; padding: 0; margin: 2.2cqw 0 0; }
+  .vcard .v-cast li { position: relative; display: grid; grid-template-columns: 20.5cqw 29.2cqw 1fr; align-items: start; margin: 0;
+                      min-height: 4.375cqw; padding: 0.95cqw 0 0.5cqw 1.35cqw; border-bottom: 1px solid rgba(255, 255, 255, 0.11); }
+  .vcard .v-cast li::before { content: ''; position: absolute; left: 0; top: 0.63cqw; bottom: 0.73cqw; width: 0.31cqw;
+                              border-radius: 0.16cqw; background: var(--c); }
+  .vcard .v-cast b { color: #f3f6fb; font-size: 1.458cqw; }
+  .vcard .v-cast span { font-size: 1.25cqw; line-height: 1.33; padding-right: 2cqw; }
+  .vcard .v-cast span:first-of-type { color: #a8b5cc; }
+  .vcard .v-patient { font-size: 1.667cqw; margin-top: 1.4cqw; }
+  .vcard .v-legend { display: flex; gap: 2.1cqw; margin-top: 2cqw; font-size: 0.9375cqw; font-weight: 600; letter-spacing: 0.08cqw; color: #a8b5cc; }
+  .vcard .v-legend span::before { content: ''; display: inline-block; width: 1.35cqw; height: 0.31cqw; border-radius: 0.16cqw;
+                                  background: var(--c); margin-right: 0.6cqw; vertical-align: middle; }
+
+  /* Recording slides: each plays its stretch of the demo video when it opens and holds near the end; click it to replay.
+     Printing shows the slide's name instead. */
+  .seg-video { display: block; width: 100%; height: 100%; object-fit: cover; background: #081126; cursor: pointer; }
+  .recording::after { content: attr(aria-label); display: none; }
+
+  /* The architecture diagram, a copy of the one in technical-guide.html#architecture (change both).
+     The diagram takes the full slide height; the title sits beside it. Light theme literals, as in the guide. */
+  .frame.arch-frame { flex-direction: row; gap: 1.6cqw; padding: 2.2cqw 1.6cqw 2.2cqw 4cqw; }
+  .arch-side { flex: 1; min-width: 0; padding-top: 1.8cqw; }
+  .arch-side h1 { font-size: 3cqw; }
+  .arch-side .arch-cap { font-size: 1.35cqw; line-height: 1.4; color: var(--muted); margin-top: 1.6cqw; }
+  svg.arch { flex: none; height: 100%; width: auto; aspect-ratio: 3 / 2; }
+  svg.arch text { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; fill: #1f2328; }
+  svg.arch .zt { font-size: 14px; font-weight: 700; }
+  svg.arch .zt.m365 { fill: #0f7b6c; } svg.arch .zt.pp { fill: #742774; } svg.arch .zt.az { fill: #0f6cbd; } svg.arch .zt.bld { fill: #59636e; }
+  svg.arch .big { font-size: 16px; font-weight: 700; }
+  svg.arch .nt { font-size: 13px; font-weight: 600; }
+  svg.arch .s { font-size: 11px; fill: #59636e; }
+  svg.arch .cl { font-size: 9.5px; font-weight: 700; letter-spacing: .07em; fill: #59636e; }
+  svg.arch .pv { fill: #9a6700; font-weight: 700; }
+  svg.arch .ga { fill: #1b7f3b; font-weight: 700; }
+  svg.arch .z-m365 { fill: #e9f5f2; stroke: #0f7b6c; stroke-width: 1.2; }
+  svg.arch .z-pp { fill: #f7eff7; stroke: #742774; stroke-width: 1.2; }
+  svg.arch .z-az { fill: #eaf2fb; stroke: #0f6cbd; stroke-width: 1.2; }
+  svg.arch .z-bld { fill: #f6f8fa; stroke: #d5dbe3; stroke-width: 1.2; stroke-dasharray: 6 4; }
+  svg.arch .n { fill: #ffffff; stroke: #d5dbe3; }
+  svg.arch .agent { fill: #ffffff; stroke: #742774; stroke-width: 2; }
+  svg.arch .chip { fill: #f6f7f8; stroke: #d5dbe3; }
+  svg.arch .tool { fill: #ffffff; stroke: #742774; stroke-width: 1.4; }
+  svg.arch .gov { fill: none; stroke: #742774; stroke-width: 1.2; stroke-dasharray: 6 4; }
+  svg.arch .idstrip { fill: #f1f4f8; stroke: #d5dbe3; }
+  svg.arch .wire { stroke: #59636e; stroke-width: 1.7; fill: none; }
+  svg.arch .wire.dash { stroke-dasharray: 5 4; }
+  svg.arch .ahp { fill: #59636e; }
+  svg.arch .badge circle { fill: #0f6cbd; }
+  svg.arch .badge text { fill: #ffffff; font-size: 11px; font-weight: 700; text-anchor: middle; }
+
+  /* The nurse manager's request, shown as the chat message she types */
+  .frame .where { font-size: 1.35cqw; color: var(--muted); margin-top: 0.8cqw; }
+  .ask { display: grid; grid-template-columns: 4.2cqw 1fr; gap: 1.4cqw; margin-top: 2.6cqw; max-width: 80cqw; }
+  .ask .avatar { width: 4.2cqw; height: 4.2cqw; border-radius: 50%; background: var(--layer-cs); color: #fff;
+                 display: grid; place-items: center; font: 600 1.4cqw/1 var(--display); }
+  .ask .from { font-size: 1.2cqw; color: var(--muted); margin-bottom: 0.6cqw; }
+  .ask .bubble { background: #eef6f4; border: 1px solid #c4e0da; border-radius: 0.3cqw 1.2cqw 1.2cqw 1.2cqw;
+                 padding: 1.8cqw 2.2cqw; }
+  .ask .bubble p { font-size: 1.6cqw; line-height: 1.42; }
+  .ask .bubble p + p { margin-top: 0.9cqw; }
+  .copy-prompt { position: absolute; top: 2cqw; right: 2cqw; font: 13px "Segoe UI", system-ui, sans-serif; padding: 4px 12px;
+                 border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text); cursor: pointer; }
+  .copy-prompt:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-prompt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Controls and speaker notes */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .controls .group { display: flex; align-items: center; gap: 8px; }
+  .controls button { font: 13px "Segoe UI", system-ui, sans-serif; padding: 4px 12px; border: 1px solid var(--line);
+                     border-radius: 6px; background: var(--card); color: var(--text); cursor: pointer; }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .controls button[aria-pressed="true"] { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+  .controls button:disabled { opacity: 0.45; cursor: default; }
+  .controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .controls kbd { font: 11px "Segoe UI", sans-serif; color: var(--muted); margin-left: 4px; }
+  #counter { min-width: 56px; text-align: center; color: var(--muted); }
+  .notes-panel { max-height: 26vh; overflow-y: auto; background: var(--card); border: 1px solid var(--line);
+                 border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 16px; font-size: 14px; }
+  .notes-panel[hidden] { display: none; }
+  .notes-panel p, .notes-panel ul { margin: 0 0 8px; }
+  .notes-panel :last-child { margin-bottom: 0; }
+  .notes-panel .when { font-size: 12px; color: var(--muted); }
+  .notes-panel .narration { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 8px; font-style: italic; }
+  .notes-panel .narration .when { font-style: normal; }
+
+  /* Full screen (F): just the slide */
+  :root.presenting header.top, :root.presenting .controls, :root.presenting .notes-panel { display: none; }
+  :root.presenting body.deck-page { background: var(--card); }
+  :root.presenting main.deck { padding: 0; }
+  :root.presenting .slide { border: 0; border-radius: 0; box-shadow: none; }
+  :root.presenting .copy-prompt { display: none; }
+
+  /* Print or save as PDF: one slide per page */
+  @page { size: 13.333in 7.5in; margin: 0; }
+  @media print {
+    header.top, .controls, .notes-panel, .copy-prompt, .seg-video { display: none !important; }
+    .recording::after { display: grid; place-items: center; position: absolute; inset: 0; background: #081126; color: #f3f6fb;
+                        font: 600 3cqw "Segoe UI", sans-serif; }
+    body.deck-page { display: block; height: auto; overflow: visible; background: #fff; }
+    main.deck { display: block; padding: 0; }
+    .stage { display: block; container-type: normal; }
+    .slide { display: block !important; width: 100%; border: 0; border-radius: 0; box-shadow: none; break-after: page; }
+  }
+</style>
+</head>
+<body class="deck-page">
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html" aria-current="page">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main class="deck">
+  <div class="stage">
+
+    <section class="slide" aria-roledescription="slide" aria-label="Discharge Navigator" data-name="title" data-seg="open" data-start="0.00" data-end="5.03">
+      <div class="frame plate cover">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>
+        </div>
+        <h1>Discharge Navigator</h1>
+        <p class="tagline"><span>One plan.</span> Every app. One platform.</p>
+        <p class="chips">
+          <span style="--c: #3fd0bb"><i></i>Microsoft 365 Copilot</span><span style="--c: #3fd0bb"><i></i>Teams</span>
+          <span style="--c: #b896ff"><i></i>Copilot Studio</span><span style="--c: #b896ff"><i></i>Power Apps</span><span style="--c: #b896ff"><i></i>Dataverse</span>
+          <span style="--c: #5aa9ff"><i></i>Microsoft Foundry</span><span style="--c: #5aa9ff"><i></i>Azure API Management</span>
+        </p>
+        <p class="fine">Synthetic data for demonstration · AI output is a draft that clinicians review and sign</p>
+      </div>
+      <aside class="notes">
+        <p><b>Open.</b> Who you are and what this session is, in a sentence or two. Then the use case.</p>
+        <p class="muted">This is the hero video's end card. The demo video opens and ends on it.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Discharge Navigator. One plan, every app, one platform.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="Discharge planning at academic medical centers" data-name="use-case" data-seg="intro" data-start="5.03" data-end="25.23">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard intro">
+        <p class="v-kicker">The use case</p>
+        <h1 class="v-title" style="font-size: 3.542cqw">Discharge planning at academic medical centers</h1>
+        <div class="v-cols"><div><p class="v-label">Who it's for</p><p>Hospitals tied to a medical school, where patient care, teaching and research meet.</p></div><div><p class="v-label">The problem</p><p>Once a patient is medically ready, every extra day in a bed is avoidable. Prior-auth delays add more.</p></div></div>
+        <div class="v-solution"><p class="v-label">The solution</p><p><b>Discharge Navigator</b>: an agent and apps on one discharge plan, so everyone sees what's blocking a discharge and clears it sooner.</p></div>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p><b>The use case</b>, in your words:</p>
+        <p>"We're going to take a look at a solution that was implemented to support a use case for academic medical centers... AMC customers include, for example, a hospital tied to a medical school, like a university hospital, that combines patient care with teaching and research."</p>
+        <p>"Our use case. Hospital discharge planning. Discharge planning is an important use case bc discharges often leverage complex inpatient systems where avoidable bed-days and prior-auth delays are expensive and visible to leadership."</p>
+        <p>Then the solution at the bottom of the card: "Discharge Navigator: an agent and apps on one discharge plan, so everyone sees what's blocking a discharge and clears it sooner." And: "Here's the whole idea in 30 seconds."</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Discharge planning, at an academic medical center. Once a patient is medically ready, every extra day in a bed is avoidable, and prior-auth delays add more.</p><p>Discharge Navigator puts an agent and apps on one discharge plan, so everyone sees what's blocking a discharge, and clears it sooner.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide recording" aria-roledescription="slide" aria-label="The overview" data-name="overview" data-seg="hero" data-start="25.23" data-end="50.23">
+      <video class="seg-video" data-src="assets/demo-video.mp4" muted playsinline preload="metadata"></video>
+      <aside class="notes">
+        <p><b>The overview</b>, the hero video without its end card. It plays when the slide opens and holds on its last frame. It's silent, so talk over it:</p>
+        <p>"A patient who's medically ready but still in a bed. Ask the agent what's blocking him, let it draft the paperwork, and every app sees the same plan. And all of it runs in your tenant, under your policies."</p>
+        <p class="muted">Click it to play it again.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Miguel is medically ready, but he's still in a bed.</p><p>Ask the agent what's blocking him, right where you already work.</p><p>It drafts the paperwork, for clinicians to review and sign.</p><p>And every app works from the same plan.</p><p>All of it runs in your own tenant, under your own guardrails.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="Now let&#x27;s see it work." data-name="next" data-seg="next" data-start="50.23" data-end="55.23">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard next">
+        <p class="v-kicker">The details</p>
+        <h1 class="v-title" style="font-size: 5.417cqw">Now let's see it work.</h1>
+        <div class="v-lines"><p>Seven steps, from one question in Microsoft 365 Copilot</p><p>to an app a nurse manager built herself.</p></div>
+        <ol class="v-row" aria-hidden="true"><li class="now">01 Recall</li><li class="now">02 Agent</li><li class="now">03 How it's built</li><li class="now">04 Pro dev</li><li class="now">05 Huddle</li><li class="now">06 Reveal</li><li class="now">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Now let's see it work. Seven steps, from one question in Microsoft 365 Copilot to an app a nurse manager built herself."</p>
+        <p class="muted">The row along the bottom is the seven chapters. Each chapter card lights its own.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Now let's see it work, in seven steps.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="Meet the cast" data-name="cast" data-seg="cast" data-start="55.23" data-end="75.13">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard cast">
+        <p class="v-kicker">Meet the cast</p>
+        <h1 class="v-title" style="font-size: 3.125cqw">Who's who</h1>
+        <ul class="v-cast"><li style="--c: #3fd0bb"><b>Case manager</b><span>Microsoft 365 Copilot and Teams</span><span>Asks where they already work.</span></li><li style="--c: #b896ff"><b>The assistant</b><span>Discharge Navigator, an agent in Copilot Studio</span><span>Finds what's blocking a discharge. Can't delete anything.</span></li><li style="--c: #5aa9ff"><b>Two writers</b><span>Two model deployments in Microsoft Foundry</span><span>Draft patient instructions and prior-auth packets.</span></li><li style="--c: #5aa9ff"><b>The gatekeeper</b><span>Azure API Management</span><span>The only door to the writers. No keys.</span></li><li style="--c: #b896ff"><b>The record</b><span>Dataverse</span><span>One copy of the plan. Everyone works on the same rows.</span></li><li style="--c: #b896ff"><b>The huddle board</b><span>Barrier Tracker, built in Copilot Studio (preview)</span><span>A nurse manager's app. No code.</span></li><li style="--c: #b896ff"><b>The capacity dashboard</b><span>Discharge Command Center, a Code App</span><span>Leadership's house-wide view, built in React.</span></li></ul>
+        <p class="v-patient">Our patient: <b>Miguel Reyes</b>. Medically ready, still in a hospital bed.</p>
+        <p class="v-legend"><span style="--c: #3fd0bb">Microsoft 365</span><span style="--c: #b896ff">Copilot Studio and Power Platform</span><span style="--c: #5aa9ff">Azure</span></p>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p><b>Meet the cast.</b> The video holds it 15 seconds while the rows come in, then the patient: "Our patient: Miguel Reyes. Medically ready, still in a hospital bed." A line per row, top to bottom:</p>
+        <ul>
+          <li><b>Case manager:</b> uses Microsoft 365 Copilot and Teams. Asks questions where they already work.</li>
+          <li><b>The assistant:</b> the Discharge Navigator agent in Copilot Studio. It looks up the plan, explains what's blocking a discharge, and asks the right writer to draft documents. It can read and update a plan; it can't delete anything.</li>
+          <li><b>Two writers:</b> two model deployments in Foundry. One writes plain-language patient instructions in the patient's own language. The other writes the prior-auth packet, with a citation for every claim.</li>
+          <li><b>The gatekeeper:</b> Azure API Management. The only door to the writers. It signs in to Foundry with its own identity, so there are no keys on the model service.</li>
+          <li><b>The record:</b> Dataverse. The one copy of the discharge plan: patient, plan, tasks and barriers.</li>
+          <li><b>The huddle board:</b> Barrier Tracker. A nurse manager uses it in chapter 5; just say you'll show how she made it in chapter 6. Say "preview."</li>
+          <li><b>The capacity dashboard:</b> Discharge Command Center, a Code App. Discharges today, patients waiting, open barriers, prior-auth turnaround and each patient's drafts. A pro developer built it in React.</li>
+        </ul>
+        <p class="muted">One plan, three kinds of builder: a nurse manager with no code, an agent builder in Copilot Studio, and a pro developer in VS Code. The agent and the app are both built in Copilot Studio, on the GitHub Copilot harness.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Meet the cast: a case manager; Discharge Navigator, the agent; two model deployments in Foundry that write the drafts, behind API Management; Dataverse, the one copy of the plan; and two apps on that plan.</p><p>Our patient: Miguel Reyes. Medically ready, still in a bed.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="01 Graph recall" data-name="chapter-1" data-seg="card1" data-start="75.13" data-end="77.73">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard card">
+        <p class="v-num">01</p>
+        <p class="v-kicker">Microsoft 365 Copilot</p>
+        <h1 class="v-title" style="font-size: 4.375cqw">Graph recall</h1>
+        <p class="v-pills"><span>Connected intelligence</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="now">01 Recall</li><li class="later">02 Agent</li><li class="later">03 How it's built</li><li class="later">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"First, what Microsoft 365 Copilot can do on its own, before we build anything."</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Chapter one. First, Microsoft 365 Copilot on its own: no agent, nothing built yet. It answers from the case manager's own email and chats.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="What you&#x27;ll see: Microsoft 365 Copilot, out of the box" data-name="brief-1" data-seg="brief1" data-start="77.73" data-end="86.53">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard brief">
+        <p class="v-kicker">What you'll see</p>
+        <h1 class="v-title" style="font-size: 3.958cqw">Microsoft 365 Copilot, out of the box</h1>
+        <div class="v-lines"><p>Copilot Chat with Work IQ. No agent, nothing built yet.</p><p>It answers from the case manager's own email and chats.</p></div>
+        <p class="v-pills"><span>Microsoft 365 Copilot</span><span>Work IQ</span><span>Microsoft Graph</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="now">01 Recall</li><li class="later">02 Agent</li><li class="later">03 How it's built</li><li class="later">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Straight-up Microsoft 365 Copilot Chat, with Work IQ and Graph data. No agent, nothing built yet. It answers from the case manager's own email and chats."</p>
+      </aside>
+    </section>
+
+    <section class="slide recording" aria-roledescription="slide" aria-label="01 Graph recall, the recording" data-name="recall" data-seg="b1" data-start="86.53" data-end="166.70">
+      <video class="seg-video" data-src="assets/demo-video.mp4" muted playsinline preload="metadata"></video>
+      <aside class="notes">
+        <p><b>First pause</b>, on the question typed but not sent. A line per callout:</p>
+        <ul>
+          <li><b>Work IQ:</b> "Copilot's work context: email, chats, meetings and files, through Microsoft Graph, with your permissions."</li>
+          <li><b>Auto:</b> "The model picker. On Auto, Copilot picks the model for each question."</li>
+          <li><b>Chat, Cowork and Code:</b> "We're in Microsoft 365 Copilot Chat. Cowork and Code are the other two modes."</li>
+          <li><b>The left nav:</b> "New chat, search, the library, agents, workspaces and your recent chats."</li>
+          <li><b>Our first prompt:</b> "What's holding up Miguel Reyes's discharge, and what did I miss over email? Let's send it."</li>
+        </ul>
+        <p>It searches the case manager's email and chats, and answers. <b>Second pause</b>, on the answer:</p>
+        <ul>
+          <li><b>The hold-up:</b> "The SNF insurance authorization, waiting on an updated PT note."</li>
+          <li><b>The payer's email:</b> "PA-2210-7734: the reviewer wants PT notes with ambulation distance and level of assist. Hold on to that: the packet in chapter 3 answers it."</li>
+          <li><b>Maple Grove's email:</b> "They can take him tomorrow, once the authorization comes through."</li>
+        </ul>
+        <p>Then both emails open: Maple Grove's, then the payer's.</p>
+        <p class="muted">The tag at the top right says it's Microsoft 365 Copilot with Work IQ. Nothing custom yet.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>We start in Microsoft 365 Copilot Chat.</p><p>Work IQ is Copilot's work context: email, chats, meetings and files, through Graph, with the user's own permissions.</p><p>The model picker is on Auto, so Copilot picks the right model for each question.</p><p>This is Copilot Chat. Cowork and Code, the other two modes, are a click away.</p><p>On the left: new chats, search, the library, agents, and recent chats.</p><p>And the first prompt, in plain words: what's holding up Miguel Reyes's discharge, and what did I miss over email?</p><p>Copilot searches the case manager's mail and chats through Graph.</p><p>The hold-up: the skilled nursing facility's prior authorization, waiting on an updated PT note.</p><p>The payer wants PT notes with ambulation distance and level of assist. Remember that for chapter three.</p><p>And Maple Grove can take him tomorrow, once the authorization comes through.</p><p>Each point links to the email it came from: Maple Grove's reply, then the payer's.</p><p>So far, that's Copilot out of the box. Nothing has been built yet.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="02 The agent in Microsoft 365" data-name="chapter-2" data-seg="card2" data-start="166.70" data-end="169.30">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard card">
+        <p class="v-num">02</p>
+        <p class="v-kicker">Discharge Navigator · Microsoft 365 Copilot</p>
+        <h1 class="v-title" style="font-size: 4.375cqw">The agent in Microsoft 365</h1>
+        <p class="v-pills"><span>Agents in the flow of work</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="now">02 Agent</li><li class="later">03 How it's built</li><li class="later">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Now let's give the case manager an agent."</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Chapter two: an agent built for the job. Discharge Navigator, made in Copilot Studio, reads the discharge plan in Dataverse, as the signed-in user.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="What you&#x27;ll see: Now an agent built for the job" data-name="brief-2" data-seg="brief2" data-start="169.30" data-end="178.60">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard brief">
+        <p class="v-kicker">What you'll see</p>
+        <h1 class="v-title" style="font-size: 3.958cqw">Now an agent built for the job</h1>
+        <div class="v-lines"><p>Discharge Navigator, made in Copilot Studio, in the same Copilot window.</p><p>It reads the plan of record in Dataverse, as the signed-in user.</p></div>
+        <p class="v-pills"><span>Copilot Studio agent</span><span>Dataverse MCP server</span><span>Microsoft 365 Copilot</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="now">02 Agent</li><li class="later">03 How it's built</li><li class="later">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"An agent built for the job: Discharge Navigator, made in Copilot Studio, in the same Microsoft 365 Copilot window. It reads the plan of record in Dataverse, as the signed-in user."</p>
+      </aside>
+    </section>
+
+    <section class="slide recording" aria-roledescription="slide" aria-label="02 The agent in Microsoft 365, the recording" data-name="agent" data-seg="b2" data-start="178.60" data-end="240.10">
+      <video class="seg-video" data-src="assets/demo-video.mp4" muted playsinline preload="metadata"></video>
+      <aside class="notes">
+        <p><b>From the start:</b> Agents &amp; Skills in the left nav, then Discharge Navigator in the list. It pauses on the list:</p>
+        <ul>
+          <li><b>Agents &amp; Skills:</b> "Every agent and skill you can use in Microsoft 365 Copilot: Microsoft's own and the ones your organization builds."</li>
+          <li><b>Discharge Navigator:</b> "Built in Copilot Studio and published here. Same window, now with an agent that knows the discharge plan."</li>
+        </ul>
+        <ul>
+          <li>"The question: which of my patients are medically ready for discharge, but still here?"</li>
+          <li>"It reads Dataverse through the Dataverse MCP server, signed in as the user, so it only sees what that user can see."</li>
+          <li>"From the plan of record: five patients. Miguel Reyes has waited two days."</li>
+          <li>"Then: what's holding up Miguel's discharge? Three barriers: the prior authorization, the SNF placement at Maple Grove, and transport. The main dependency is the updated PT note the payer asked for in chapter 1."</li>
+          <li>"It can read and update a plan, and every tool that could delete is switched off."</li>
+        </ul>
+        <p class="muted">Re-recorded on 2026-11-03 so it's about Miguel (the first take listed only Ruth Lindqvist). His three barriers are all open here; the pro dev recording in chapter 4 was made after the bed acceptance was closed, so it shows two. The tag at the top right says it's a Copilot Studio agent in Microsoft 365 Copilot.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Same window. This time, the case manager opens Agents and Skills.</p><p>Agents and Skills lists what they can use here: Microsoft's own agents, and the ones their organization builds.</p><p>Discharge Navigator was built in Copilot Studio and published here, right where they already work.</p><p>They ask: which of my patients are medically ready for discharge, but still here?</p><p>It reads Dataverse through its MCP server, signed in as the user, so it sees only what they can see.</p><p>Five patients, from the plan of record in Dataverse. Miguel Reyes has waited two days.</p><p>Then: what's holding up Miguel's discharge?</p><p>Three barriers: the prior authorization, the placement at Maple Grove, and transport.</p><p>The main dependency is the updated PT note the payer asked for in chapter one.</p><p>And it can read and update a plan, but every tool that could delete is switched off.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="03 Behind the scenes: how it&#x27;s built" data-name="chapter-3" data-seg="card3" data-start="240.10" data-end="242.70">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard card">
+        <p class="v-num">03</p>
+        <p class="v-kicker">Copilot Studio · Microsoft Foundry</p>
+        <h1 class="v-title" style="font-size: 4.375cqw">Behind the scenes: how it's built</h1>
+        <p class="v-pills"><span>Instructions, skills, tools and models</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="now">03 How it's built</li><li class="later">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Let's look behind the scenes: how it's built."</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Chapter three: behind the scenes, in Copilot Studio. A tour of how the agent is built, then two drafts from two model deployments in Microsoft Foundry.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="What you&#x27;ll see: Inside Copilot Studio: how it&#x27;s built" data-name="brief-3" data-seg="brief3" data-start="242.70" data-end="250.70">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard brief">
+        <p class="v-kicker">What you'll see</p>
+        <h1 class="v-title" style="font-size: 3.958cqw">Inside Copilot Studio: how it's built</h1>
+        <div class="v-lines"><p>A tour of the agent's setup, then two drafts from two models in Microsoft Foundry:</p><p>patient instructions from Mistral Large 3, a prior-auth packet from gpt-5.5.</p></div>
+        <p class="v-pills"><span>Copilot Studio</span><span>Skills</span><span>Microsoft Foundry</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="now">03 How it's built</li><li class="later">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Inside Copilot Studio: how it's built. A tour of the agent's setup, then two drafts from two model deployments in Microsoft Foundry: patient instructions from Mistral Large 3, which is in preview, and a prior-auth packet from gpt-5.5."</p>
+      </aside>
+    </section>
+
+    <section class="slide recording" aria-roledescription="slide" aria-label="03 Behind the scenes: model choice, the recording" data-name="models" data-seg="b3" data-start="250.70" data-end="395.00">
+      <video class="seg-video" data-src="assets/demo-video.mp4" muted playsinline preload="metadata"></video>
+      <aside class="notes">
+        <ul>
+          <li>"Behind the agent: Copilot Studio, where it's built. Here's Discharge Navigator."</li>
+          <li><b>The tour.</b> The recording pauses, and a box moves through the agent's setup with a note for each part. A line per part:
+            <ul>
+              <li><b>Instructions:</b> "Its job, in plain language: who it helps, where the data lives, and the rules it follows, like never inventing a value."</li>
+              <li><b>Channels:</b> "Published once, it's in Teams and Microsoft 365 Copilot."</li>
+              <li><b>Skills:</b> "Recipes for two jobs: patient instructions and the prior-auth packet. Each reads the chart in Dataverse, then hands the writing to a model deployment in Microsoft Foundry, formerly Azure AI Foundry."</li>
+              <li><b>Tools:</b> "Dataverse for the plan, as the signed-in user, and the model deployments in Foundry for the drafts."</li>
+              <li><b>Knowledge:</b> "No documents to search: the facts come from Dataverse."</li>
+              <li><b>Connected agents:</b> "It could hand work to other agents; this one works on its own."</li>
+              <li><b>Memory:</b> "In preview, and switched off for this agent."</li>
+            </ul>
+          </li>
+          <li>"Then a choice of model for the agent itself, picked from a list. Publish once, and it's live in Teams and Microsoft 365 Copilot."</li>
+          <li>"Draft Miguel's patient instructions. A skill reads his chart in Dataverse, then hands the writing to a model deployment in Foundry."</li>
+          <li><b>Pause on the answer:</b> "The skill handed his chart to the patient-summary model deployment in Foundry: Mistral Large 3, in preview. It answered in Spanish because his chart lists Spanish as his preferred language." Then, as it scrolls: "Plain words, his medicines, his next steps and teach-back questions. It's a draft his nurse reviews and signs."</li>
+          <li>"Then the prior-auth packet. A different job, a different model: gpt-5.5. A draft for the case manager; nothing is sent."</li>
+          <li><b>Pause on the packet:</b> "It quotes his chart, '150 feet with a rolling walker and standby assist': what the payer asked for in chapter 1. And it flags what's still missing: a dated, signed PT note." Then: "Every fact cites the chart field it came from, and it asks before saving anything."</li>
+        </ul>
+        <p class="muted">Say "model deployment in Foundry," not "Foundry agent." Don't name the agent's own model; the recording switches it, and the captions just say "a choice of model." The two writers are named from each response's model field.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>This is Copilot Studio, where the agent is built. Open Agents, then Discharge Navigator.</p><p>The instructions give it its job in plain language: who it helps, where the data lives, and the rules it follows.</p><p>Channels: it's published to Teams and Microsoft 365 Copilot.</p><p>Skills are recipes for two jobs: patient instructions, and the prior-auth packet. Each one reads the chart in Dataverse, then hands the writing to a model deployment in Microsoft Foundry, formerly Azure AI Foundry.</p><p>Tools are how it reaches other systems: Dataverse for the plan, and the model deployments in Foundry for the drafts.</p><p>There are no documents to search. The facts come from Dataverse.</p><p>It could hand work to other agents. This one works on its own.</p><p>And memory, in preview, is switched off for this agent.</p><p>Then a choice of model for the agent itself, picked from a list.</p><p>Publish once, and it's live in Teams and Microsoft 365 Copilot.</p><p>Now: draft Miguel Reyes's patient instructions.</p><p>A skill reads his chart in Dataverse, then hands the writing to a model deployment in Foundry.</p><p>The skill sent his chart to the patient-summary model deployment: Mistral Large 3, in preview.</p><p>It's in Spanish because his chart lists Spanish as his preferred language. So he gets instructions in plain words he can follow at home.</p><p>His medicines, his next steps, and teach-back questions.</p><p>It's a draft his nurse reviews and signs.</p><p>Next, the prior-auth packet for the payer.</p><p>A different job, so a different model: gpt-5.5. It's a draft for the case manager. Nothing is sent.</p><p>It answers the payer's question from chapter one, quoting his chart, with the field each fact came from.</p><p>And it flags the gap: no dated, signed PT note yet. A draft for the case manager to finish, not a submission.</p><p>And it asks before saving anything to his plan.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="04 Pro dev" data-name="chapter-4" data-seg="card4" data-start="395.00" data-end="397.60">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard card">
+        <p class="v-num">04</p>
+        <p class="v-kicker">Discharge Command Center · a Power Apps Code App</p>
+        <h1 class="v-title" style="font-size: 4.375cqw">Pro dev</h1>
+        <p class="v-pills"><span>Pro devs in their own tools</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="now">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Now, what a pro developer builds on the same plan."</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Chapter four: a pro developer's app. The Discharge Command Center is a Power Apps code app, written in React, with the same agent built in. This time, it saves the prior-auth packet to the plan.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="What you&#x27;ll see: A pro developer&#x27;s app, written in code" data-name="brief-4" data-seg="brief4" data-start="397.60" data-end="409.30">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard brief">
+        <p class="v-kicker">What you'll see</p>
+        <h1 class="v-title" style="font-size: 3.958cqw">A pro developer's app, written in code</h1>
+        <div class="v-lines"><p>The Discharge Command Center: a Power Apps Code App built in React.</p><p>The house-wide view, each patient's plan, and the agent saving a draft.</p></div>
+        <p class="v-pills"><span>Power Apps Code App</span><span>React</span><span>Discharge Navigator</span><span>Microsoft Foundry</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="now">04 Pro dev</li><li class="later">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"A pro developer's app, written in code: the Discharge Command Center, a Power Apps Code App built in React. The house-wide view, each patient's plan, and the same agent built in. This time it saves the prior-auth packet to the plan."</p>
+      </aside>
+    </section>
+
+    <section class="slide recording" aria-roledescription="slide" aria-label="04 Pro dev, the recording" data-name="pro-dev" data-seg="b4" data-start="409.30" data-end="534.87">
+      <video class="seg-video" data-src="assets/demo-video.mp4" muted playsinline preload="metadata"></video>
+      <aside class="notes">
+        <p>"Leadership's house-wide view: the Command Center, a Power Apps Code App built in React." It pauses on the dashboard:</p>
+        <ul>
+          <li><b>The house-wide numbers:</b> "Discharges expected today, patients medically ready but still here, open barriers, prior-auth turnaround and readmission risk."</li>
+          <li><b>Where the barriers are:</b> "Open barriers by type, and avoidable bed-days by unit."</li>
+          <li><b>Every active plan:</b> "Sorted by avoidable days. Select one for the detail."</li>
+        </ul>
+        <p>"Select Miguel, and his whole plan opens." It pauses on his plan:</p>
+        <ul>
+          <li><b>His plan:</b> "Diagnosis, destination, payer, language and hospital course, from the plan of record in Dataverse."</li>
+          <li><b>Agent drafts:</b> "Where the agent's drafts land. No prior-auth packet yet."</li>
+          <li><b>Tasks and barriers:</b> "Each with an owner, a due date and a status."</li>
+        </ul>
+        <ul>
+          <li>"The same agent, built into the app: what's still blocking Miguel Reyes? Three barriers: the prior authorization, the SNF placement and transport."</li>
+          <li>"Then: draft his prior auth packet and save it to his record." The wait is sped up 20x.</li>
+          <li>It pauses on the end of the packet: "The response says which model wrote it: gpt-5.5, the prior-auth model deployment in Foundry. A draft for the case manager, not submitted."</li>
+          <li>"This time it saves the draft to his record. Back in the app, the packet is on his plan." It pauses on it: "Marked Draft, saved by Discharge Navigator, for clinician review and signature. Every fact cites where it came from."</li>
+          <li>"One plan in Dataverse: this dashboard, the agent and every other app see the same rows."</li>
+        </ul>
+        <p class="muted">A pro developer builds it in their own tools: VS Code with GitHub Copilot, deployed with the Power Apps CLI. Re-recorded on 2026-11-03 with all three of Miguel's barriers open; it saved the prior-auth packet to DP-1001, so chapter 3 (recorded earlier) still shows it unsaved. Say "draft" for the packet, never "submitted".</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>This is leadership's house-wide view of discharges: the Command Center, a code app a pro developer built in React.</p><p>Across the house: discharges expected today, patients medically ready but still here, open barriers, prior-auth turnaround, and readmission risk.</p><p>Where the barriers are, by type, and the avoidable bed-days, by unit.</p><p>And every active plan, sorted by avoidable days. Select one for the detail.</p><p>Select Miguel, and his whole plan opens: his chart, the agent's drafts, and his tasks and barriers.</p><p>His plan of record in Dataverse: diagnosis, destination, payer, language, and his hospital course.</p><p>The agent's drafts land here. There's no prior-auth packet yet.</p><p>And his tasks and barriers, each with an owner, a due date and a status.</p><p>The same agent is built into the app. What's still blocking Miguel Reyes?</p><p>Three barriers: the prior authorization, the placement at Maple Grove, and transport.</p><p>Then: draft his prior-auth packet, and save it to his record.</p><p>The same skill as in chapter three wrote it, with gpt-5.5, the prior-auth model deployment in Foundry. A draft, not submitted.</p><p>And this time it saves the draft to his record.</p><p>Back in the app, the packet is on his plan.</p><p>Marked as a draft, saved by Discharge Navigator, for a clinician to review and sign.</p><p>Every fact cites where it came from in his chart.</p><p>One plan in Dataverse: this dashboard, the agent and every other app see the same rows.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="05 The huddle: close a barrier" data-name="chapter-5" data-seg="card5" data-start="534.87" data-end="537.47">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard card">
+        <p class="v-num">05</p>
+        <p class="v-kicker">Barrier Tracker</p>
+        <h1 class="v-title" style="font-size: 4.375cqw">The huddle: close a barrier</h1>
+        <p class="v-pills"><span>One plan, every app</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="done">04 Pro dev</li><li class="now">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Now the morning huddle on 6 East."</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Chapter five: the morning huddle on 6 East, run from Barrier Tracker, the nurse manager's board on the same plan.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="What you&#x27;ll see: The 6 East huddle board" data-name="brief-5" data-seg="brief5" data-start="537.47" data-end="545.47">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard brief">
+        <p class="v-kicker">What you'll see</p>
+        <h1 class="v-title" style="font-size: 3.958cqw">The 6 East huddle board</h1>
+        <div class="v-lines"><p>Barrier Tracker: the nurse manager's board for the morning huddle,</p><p>a web app on the same plan in Dataverse. Who built it, and how, comes next.</p></div>
+        <p class="v-pills"><span>Barrier Tracker</span><span>Dataverse</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="done">04 Pro dev</li><li class="now">05 Huddle</li><li class="later">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"The 6 East huddle board: Barrier Tracker, the nurse manager's board for the morning huddle. It's a web app on the same plan in Dataverse."</p>
+        <p class="muted">Don't say who built it or how; that's the next chapter.</p>
+      </aside>
+    </section>
+
+    <section class="slide recording" aria-roledescription="slide" aria-label="05 The huddle: close a barrier, the recording" data-name="huddle" data-seg="b5" data-start="545.47" data-end="567.50">
+      <video class="seg-video" data-src="assets/demo-video.mp4" muted playsinline preload="metadata"></video>
+      <aside class="notes">
+        <ul>
+          <li>"The 6 East nurse manager runs the morning huddle from her board, Barrier Tracker."</li>
+          <li>"Maple Grove has accepted Miguel, so she adds the note right on the barrier, then marks the bed acceptance completed."</li>
+          <li>"Off the board: nine open barriers become eight. It's the same row the agent and the Command Center read."</li>
+        </ul>
+        <p class="muted">Keep the reveal: nothing yet about how the app was made.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>The 6 East nurse manager runs the morning huddle from her board.</p><p>Maple Grove has accepted Miguel, so she adds a note, right on the barrier.</p><p>Then marks the bed acceptance completed.</p><p>Nine open barriers become eight. It's the same row the agent and the Command Center read.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="06 The reveal: she built it herself" data-name="chapter-6" data-seg="card6" data-start="567.50" data-end="570.10">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard card">
+        <p class="v-num">06</p>
+        <p class="v-kicker">Apps in Copilot Studio (preview)</p>
+        <h1 class="v-title" style="font-size: 4.375cqw">The reveal: she built it herself</h1>
+        <p class="v-pills"><span>Build for everyone</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="done">04 Pro dev</li><li class="done">05 Huddle</li><li class="now">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"One more thing about that huddle board."</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Chapter six: the reveal. Nobody filed a ticket for that board, and nobody wrote any code. First, the request she typed. Then the build, sped up.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="What you&#x27;ll see: Her request, then the build" data-name="brief-6" data-seg="brief6" data-start="570.10" data-end="581.10">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard brief">
+        <p class="v-kicker">What you'll see</p>
+        <h1 class="v-title" style="font-size: 3.958cqw">Her request, then the build</h1>
+        <div class="v-lines"><p>First, the request she typed, word for word.</p><p>Then Apps in Copilot Studio (preview) building Barrier Tracker from it, sped up.</p></div>
+        <p class="v-pills"><span>Apps in Copilot Studio (preview)</span><span>Dataverse</span><span>No code</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="done">04 Pro dev</li><li class="done">05 Huddle</li><li class="now">06 Reveal</li><li class="later">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"Nobody filed a ticket for it, and nobody wrote any code. First, the request she typed, word for word. Then Apps in Copilot Studio, in preview, building Barrier Tracker from it, sped up."</p>
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="The nurse manager's request" data-name="prompt" data-seg="b6.0" data-start="581.10" data-end="593.70">
+      <button type="button" class="copy-prompt" data-copy="#barrier-tracker-prompt">Copy prompt</button>
+      <div class="frame compact">
+        <h1>The nurse manager's request</h1>
+        <p class="where">Typed into Copilot Studio: Home &gt; App (preview), exactly as written</p>
+        <div class="ask">
+          <div class="avatar" aria-hidden="true">NM</div>
+          <div>
+            <p class="from">6 East nurse manager</p>
+            <div class="bubble" id="barrier-tracker-prompt">
+              <p>I'm the nurse manager on 6 East. Every morning at huddle we go through what's keeping patients from going home, and I want a simple board for it. Call it Barrier Tracker.</p>
+              <p>Build it in our og-svc environment (environment ID &lt;environment-id&gt;) and use the Discharge Tasks and Discharge Plans tables we already have there, not made-up data. Read and update them with the Dataverse connector's selected-environment operations, passing og-svc's address (og-svc.crm.dynamics.com), through my existing Dataverse connection in og-svc. Don't add them as table data sources or connect to the database directly.</p>
+              <p>Show the open discharge barriers for 6 East: tasks marked as a discharge barrier that aren't completed. For each one, show the patient, the barrier, who it's assigned to, its status, the due date and the latest notes. Put the ones due soonest at the top.</p>
+              <p>Let me open a barrier, add a note and mark it completed, with today's date as the completed date. Nobody should be able to delete anything.</p>
+              <p>Make it easy to read on the big screen in the huddle room.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="notes">
+        <p><b>The reveal.</b> The video's caption: "The reveal: she built Barrier Tracker herself, from this one request." Then:</p>
+        <p>"This is all she typed. What the huddle needs to see, the tables the hospital already has, what she wants to change, and that nobody can delete anything. Plain language."</p>
+        <p class="muted"><b>Why the second paragraph is technical.</b> The app builder's table data sources only accept Dataverse's usual address pattern (<code>org…crm.dynamics.com</code>), and og-svc has a custom address (<code>og-svc.crm.dynamics.com</code>). The connector's current-environment operations fail there too ("invalid organization URL"), so the prompt asks for its <b>selected-environment</b> operations with og-svc's address, through her existing connection. That still runs through the connector and her connection, not a direct database connection. It also gives the environment ID, so the builder doesn't stop to ask for it or start an admin connection to look it up (<a href="known-issues.html#ki-31">KI-31</a>). Tested 2026-11-01: the builder built the app in og-svc and showed real data, in the preview and after publishing.</p>
+        <p class="muted"><b>To rebuild the app</b> (off camera; the huddle uses the one you already built): Copy prompt, then paste it into Copilot Studio &gt; Home &gt; App (preview). Approve the actions it asks for ("Approved 1 action"). If it asks which operations to use, pick the selected-environment ones with og-svc's address. Delete the previous Barrier Tracker first, and any "Power Platform for Admins" connection the builder started in og-svc.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>The reveal: she built Barrier Tracker herself, from this one request.</p><p>Plain language: what the huddle needs to see, the tables it should use, and that nobody can delete anything.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide recording" aria-roledescription="slide" aria-label="06 The reveal: the build, sped up" data-name="build" data-seg="b6.1" data-start="593.70" data-end="639.47">
+      <video class="seg-video" data-src="assets/demo-video.mp4" muted playsinline preload="metadata"></video>
+      <aside class="notes">
+        <p><b>The build.</b> It starts on Copilot Studio's home and pauses on <b>App (preview)</b>: "Apps in Copilot Studio, in preview: describe the app you want in plain words, and Copilot Studio builds it." Then:</p>
+        <ul>
+          <li>"She pastes it into Apps in Copilot Studio, in preview: her board, in her own words."</li>
+          <li>"It finds the Discharge tables the hospital already has in Dataverse."</li>
+          <li>"It builds the app, checks a live read, and publishes it. Real hospital data, not made-up data."</li>
+          <li>"It reads the data as her, so it can't see anything she couldn't already. And there's Barrier Tracker, the board from the huddle. No code."</li>
+        </ul>
+        <p>It ends on your line: "Even if you know nothing about building apps, you can describe one."</p>
+        <p>If anyone asks how it's governed:</p>
+        <ul>
+          <li><b>As her:</b> every person who opens the app connects to Dataverse with their own account. Two people can open the same app and see different rows.</li>
+          <li><b>Governed:</b> apps built in Copilot Studio run on Copilot Managed Runtime. They sign in with Entra ID and follow the environment's policies from the moment they're created.</li>
+          <li><b>Sharing the app doesn't share the data.</b> Anyone she shares it with still needs their own access to the Dataverse tables.</li>
+          <li><b>IT can see it:</b> every app shows up in the Microsoft 365 admin center inventory, with its owner.</li>
+        </ul>
+        <p class="muted">Say preview. It runs on the same GitHub Copilot harness as the Discharge Navigator agent. The build was recorded earlier, so its board can show Miguel's bed acceptance still open; don't point it out. The builder's question about og-svc's address is cut (<a href="known-issues.html#ki-31">KI-31</a> says why it asks). Don't name the environment on camera.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>She starts on App, in preview, in Copilot Studio: describe the app you want, in plain words, and it builds it.</p><p>She pastes her request into Apps in Copilot Studio.</p><p>It finds the hospital's discharge tables in Dataverse, builds the app, checks a live read, and publishes it.</p><p>This is real hospital data: 6 East's open discharge barriers.</p><p>And it reads that data as her, so it can't see anything she couldn't already see.</p><p>And there's Barrier Tracker, the board from the huddle. No code.</p><p>Even if you know nothing about building apps, you can describe one.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="07 One plan. Every app. One platform." data-name="chapter-7" data-seg="card7" data-start="639.47" data-end="642.07">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard card">
+        <p class="v-num">07</p>
+        <p class="v-kicker">How it fits together</p>
+        <h1 class="v-title" style="font-size: 4.375cqw">One plan. Every app. One platform.</h1>
+        <p class="v-pills"><span>One platform</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="done">04 Pro dev</li><li class="done">05 Huddle</li><li class="done">06 Reveal</li><li class="now">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"So, how does it all fit together?"</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>Chapter seven: how it all fits together. One Entra ID tenant, one discharge plan in Dataverse, and every piece you just saw, working on the same rows.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="What you&#x27;ll see: How it all fits together" data-name="brief-7" data-seg="brief7" data-start="642.07" data-end="650.67">
+      <!-- card: written by scripts/build_demo_video.py -->
+      <div class="frame plate vcard brief">
+        <p class="v-kicker">What you'll see</p>
+        <h1 class="v-title" style="font-size: 3.958cqw">How it all fits together</h1>
+        <div class="v-lines"><p>One Entra ID tenant, one discharge plan in Dataverse,</p><p>and every piece you just saw working on the same rows.</p></div>
+        <p class="v-pills"><span>Microsoft 365</span><span>Copilot Studio</span><span>Power Platform</span><span>Azure</span></p>
+        <ol class="v-row" aria-hidden="true"><li class="done">01 Recall</li><li class="done">02 Agent</li><li class="done">03 How it's built</li><li class="done">04 Pro dev</li><li class="done">05 Huddle</li><li class="done">06 Reveal</li><li class="now">07 Close</li></ol>
+      </div>
+      <!-- /card -->
+      <aside class="notes">
+        <p>"One Entra ID tenant, one discharge plan in Dataverse, and every piece you just saw working on the same rows."</p>
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="How it fits together" data-name="architecture" data-seg="b7" data-start="650.67" data-end="707.07">
+      <div class="frame arch-frame">
+        <div class="arch-side">
+          <h1>How it fits together</h1>
+          <p class="arch-cap">One tenant. The agent and both apps work on the same rows in Dataverse, and the writing goes to Foundry only through API Management.</p>
+        </div>
+        <svg class="arch" viewBox="0 0 1200 800" role="img" aria-labelledby="arch-title">
+          <title id="arch-title">AMC Discharge Navigator architecture: Microsoft 365, Power Platform and Azure</title>
+          <defs>
+            <marker id="arch-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" class="ahp"/>
+            </marker>
+          </defs>
+
+          <!-- ===== Microsoft 365 ===== -->
+          <rect x="20" y="20" width="220" height="420" rx="14" class="z-m365"/>
+          <text x="36" y="44" class="zt m365">Microsoft 365</text>
+
+          <rect x="36" y="60" width="188" height="72" rx="8" class="n"/>
+          <text x="50" y="84" class="nt">Teams</text>
+          <text x="50" y="102" class="s">Discharge Navigator chat</text>
+
+          <rect x="36" y="150" width="188" height="72" rx="8" class="n"/>
+          <text x="50" y="174" class="nt">Microsoft 365 Copilot</text>
+          <text x="50" y="192" class="s">Discharge Navigator chat</text>
+          <text x="50" y="208" class="s">Graph recall in the main chat</text>
+
+          <rect x="36" y="262" width="188" height="72" rx="8" class="n"/>
+          <text x="50" y="286" class="nt">Microsoft Graph</text>
+          <text x="50" y="304" class="s">Mail and chats (seeded)</text>
+          <text x="50" y="320" class="s">Maple Grove + payer emails</text>
+
+          <path d="M130 222 V258" class="wire" marker-end="url(#arch-ah)"/>
+          <g class="badge"><circle cx="150" cy="240" r="9"/><text x="150" y="244">7</text></g>
+
+          <text x="36" y="372" class="s">Who uses it: case manager</text>
+          <text x="36" y="388" class="s">(Patrick O'Gorman), unit nurse</text>
+          <text x="36" y="404" class="s">manager, nurses, physicians</text>
+
+          <!-- ===== Build & deploy ===== -->
+          <rect x="20" y="460" width="220" height="280" rx="14" class="z-bld"/>
+          <text x="36" y="484" class="zt bld">Build and deploy</text>
+
+          <rect x="36" y="500" width="188" height="56" rx="8" class="n"/>
+          <text x="50" y="522" class="nt">VS Code + GitHub Copilot</text>
+          <text x="50" y="540" class="s">pro-dev beat (Code App)</text>
+
+          <rect x="36" y="572" width="188" height="72" rx="8" class="n"/>
+          <text x="50" y="594" class="nt">PAC CLI 2.13 · pa CLI</text>
+          <text x="50" y="612" class="s">pac copilot pull / push / publish</text>
+          <text x="50" y="628" class="s">pa app push · solution export</text>
+
+          <rect x="36" y="660" width="188" height="64" rx="8" class="n"/>
+          <text x="50" y="682" class="nt">GitHub repo</text>
+          <text x="50" y="700" class="s">pogorman/amc-agent-demo</text>
+          <text x="50" y="716" class="s">agent/ · code-app/ · solutions/</text>
+
+          <path d="M224 608 H252 V680 H278" class="wire dash" marker-end="url(#arch-ah)"/>
+
+          <!-- ===== Power Platform ===== -->
+          <rect x="260" y="20" width="600" height="720" rx="14" class="z-pp"/>
+          <text x="276" y="44" class="zt pp">Power Platform · og-svc (Managed Environment)</text>
+
+          <!-- Agent -->
+          <rect x="280" y="60" width="560" height="282" rx="10" class="agent"/>
+          <text x="296" y="86" class="big">Discharge Navigator</text>
+          <text x="296" y="104" class="s">Copilot Studio agent · GitHub Copilot harness · no topics · published</text>
+
+          <rect x="296" y="118" width="264" height="48" rx="6" class="chip"/>
+          <text x="308" y="136" class="cl">ORCHESTRATOR MODEL</text>
+          <text x="308" y="155" class="nt">Claude Sonnet 4.6</text>
+
+          <rect x="576" y="118" width="248" height="48" rx="6" class="chip"/>
+          <text x="588" y="136" class="cl">INSTRUCTIONS</text>
+          <text x="588" y="155" class="nt">tables · “my patients” · barriers</text>
+
+          <rect x="296" y="176" width="264" height="58" rx="6" class="chip"/>
+          <text x="308" y="193" class="cl">SKILL</text>
+          <text x="308" y="211" class="nt">patient-discharge-summary</text>
+          <text x="308" y="227" class="s">→ deployment patient-summary</text>
+
+          <rect x="576" y="176" width="248" height="58" rx="6" class="chip"/>
+          <text x="588" y="193" class="cl">SKILL</text>
+          <text x="588" y="211" class="nt">prior-auth-packet</text>
+          <text x="588" y="227" class="s">→ deployment prior-auth</text>
+
+          <rect x="296" y="244" width="264" height="86" rx="6" class="tool"/>
+          <text x="308" y="262" class="cl">TOOL · RUNS AS THE SIGNED-IN USER</text>
+          <text x="308" y="281" class="nt">Dataverse MCP server</text>
+          <text x="308" y="299" class="s">read_query · search · describe</text>
+          <text x="308" y="315" class="s">search_data · update_record (nothing else)</text>
+
+          <rect x="576" y="244" width="248" height="86" rx="6" class="tool"/>
+          <text x="588" y="262" class="cl">TOOL · MAKER CONNECTION</text>
+          <text x="588" y="281" class="nt">Foundry Deployments</text>
+          <text x="588" y="299" class="s">custom connector · Chat completion</text>
+          <text x="588" y="315" class="s">connection amc-foundry-key</text>
+
+          <!-- Dataverse -->
+          <rect x="280" y="378" width="300" height="236" rx="10" class="n"/>
+          <text x="296" y="402" class="big">Dataverse</text>
+          <text x="296" y="420" class="s">synthetic: 36 patients · 36 plans · 209 tasks</text>
+
+          <rect x="296" y="432" width="268" height="50" rx="6" class="chip"/>
+          <text x="308" y="452" class="nt">amc_patient</text>
+          <text x="308" y="470" class="s">stands in for the EHR</text>
+
+          <rect x="296" y="490" width="268" height="56" rx="6" class="chip"/>
+          <text x="308" y="509" class="nt">amc_dischargeplan</text>
+          <text x="308" y="525" class="s">status, dates, hospital course</text>
+          <text x="308" y="540" class="s">+ the drafts the agent saves</text>
+
+          <rect x="296" y="554" width="268" height="48" rx="6" class="chip"/>
+          <text x="308" y="573" class="nt">amc_dischargetask</text>
+          <text x="308" y="590" class="s">barrier = isbarrier and not Completed</text>
+
+          <!-- Apps -->
+          <rect x="600" y="378" width="240" height="236" rx="10" class="n"/>
+          <text x="616" y="402" class="big">Apps on the same data</text>
+
+          <rect x="616" y="416" width="208" height="86" rx="6" class="chip"/>
+          <text x="628" y="435" class="nt">Discharge Command Center</text>
+          <text x="628" y="452" class="s">Code App v1.2.1 · React + Fluent</text>
+          <text x="628" y="468" class="s">KPIs · plans · drafts · agent chat</text>
+          <text x="628" y="484" class="s">writes: Mark complete</text>
+
+          <rect x="616" y="514" width="208" height="86" rx="6" class="chip"/>
+          <text x="628" y="533" class="nt">Barrier Tracker</text>
+          <text x="628" y="550" class="s">built in Copilot Studio (preview)</text>
+          <text x="628" y="566" class="s">from a plain-language prompt, on</text>
+          <text x="628" y="582" class="s">the Discharge Task table, as her</text>
+
+          <!-- Solution / governance -->
+          <rect x="280" y="634" width="560" height="90" rx="10" class="gov"/>
+          <text x="296" y="656" class="nt">Solution: AMC Discharge Navigator</text>
+          <text x="296" y="674" class="s">Holds the agent, tables, connection references, connector and Code App.</text>
+          <text x="296" y="690" class="s">Exported and unpacked to solutions/ in the repo after every change.</text>
+          <text x="296" y="706" class="s">Managed Environment governance</text>
+
+          <!-- ===== Azure ===== -->
+          <rect x="880" y="20" width="300" height="720" rx="14" class="z-az"/>
+          <text x="896" y="44" class="zt az">Azure · rg-amc-agent-demo · East US 2</text>
+
+          <rect x="896" y="200" width="268" height="104" rx="8" class="n"/>
+          <text x="910" y="222" class="nt">API Management</text>
+          <text x="910" y="240" class="s">cuh-discharge-apim2 (Consumption)</text>
+          <text x="910" y="256" class="s">API /foundry · checks the subscription key</text>
+          <text x="910" y="272" class="s">calls Foundry as its managed identity</text>
+          <text x="910" y="288" class="s">(Foundry has no keys to use)</text>
+
+          <rect x="896" y="372" width="268" height="200" rx="8" class="n"/>
+          <text x="910" y="394" class="nt">Microsoft Foundry</text>
+          <text x="910" y="412" class="s">cuh-discharge-foundry2</text>
+          <text x="910" y="428" class="s">project amc-discharge-navigator</text>
+
+          <rect x="912" y="444" width="236" height="52" rx="6" class="chip"/>
+          <text x="924" y="462" class="cl">DEPLOYMENT · patient-summary</text>
+          <text x="924" y="483" class="nt">Mistral-Large-3 · <tspan class="pv">preview</tspan></text>
+
+          <rect x="912" y="506" width="236" height="52" rx="6" class="chip"/>
+          <text x="924" y="524" class="cl">DEPLOYMENT · prior-auth</text>
+          <text x="924" y="545" class="nt">gpt-5.5 · <tspan class="ga">GA</tspan></text>
+
+          <rect x="896" y="600" width="268" height="96" rx="8" class="n"/>
+          <text x="910" y="622" class="nt">Entra ID on the Azure side</text>
+          <text x="910" y="640" class="s">Foundry: disableLocalAuth = true (no keys)</text>
+          <text x="910" y="656" class="s">APIM identity: Cognitive Services User</text>
+          <text x="910" y="672" class="s">connector → APIM: subscription key</text>
+
+          <!-- ===== Wires ===== -->
+          <!-- 1: people to agent -->
+          <path d="M224 96 H278" class="wire" marker-end="url(#arch-ah)"/>
+          <path d="M224 186 H278" class="wire" marker-end="url(#arch-ah)"/>
+          <g class="badge"><circle cx="251" cy="80" r="9"/><text x="251" y="84">1</text></g>
+          <g class="badge"><circle cx="251" cy="170" r="9"/><text x="251" y="174">1</text></g>
+          <!-- 2: MCP to Dataverse -->
+          <path d="M428 332 V376" class="wire" marker-start="url(#arch-ah)" marker-end="url(#arch-ah)"/>
+          <g class="badge"><circle cx="448" cy="354" r="9"/><text x="448" y="358">2</text></g>
+          <!-- 3: connector to APIM -->
+          <path d="M826 287 H870 V252 H894" class="wire" marker-end="url(#arch-ah)"/>
+          <g class="badge"><circle cx="870" cy="310" r="9"/><text x="870" y="314">3</text></g>
+          <!-- 4: APIM to Foundry -->
+          <path d="M1030 306 V370" class="wire" marker-end="url(#arch-ah)"/>
+          <g class="badge"><circle cx="1050" cy="338" r="9"/><text x="1050" y="342">4</text></g>
+          <!-- 5, 6: apps to Dataverse -->
+          <path d="M614 459 H582" class="wire" marker-start="url(#arch-ah)" marker-end="url(#arch-ah)"/>
+          <g class="badge"><circle cx="598" cy="444" r="9"/><text x="598" y="448">5</text></g>
+          <path d="M614 557 H582" class="wire" marker-start="url(#arch-ah)" marker-end="url(#arch-ah)"/>
+          <g class="badge"><circle cx="598" cy="542" r="9"/><text x="598" y="546">6</text></g>
+
+          <!-- Identity strip -->
+          <rect x="20" y="756" width="1160" height="34" rx="8" class="idstrip"/>
+          <text x="600" y="778" text-anchor="middle" class="s">One Entra ID tenant for Microsoft 365, Power Platform and Azure</text>
+        </svg>
+      </div>
+      <aside class="notes">
+        <p><b>The close.</b> "One discharge plan in Dataverse, one Entra ID tenant, one set of governance." Then the video pauses on the diagram and boxes each part with a note. A line each:</p>
+        <ul>
+          <li><b>Microsoft 365:</b> "Where people already work: Teams and Microsoft 365 Copilot. Graph holds the case manager's mail and chats."</li>
+          <li><b>The agent:</b> "Discharge Navigator in Copilot Studio: instructions, two skills, and tools for Dataverse, as the signed-in user, and Foundry."</li>
+          <li><b>Dataverse:</b> "One copy of the discharge plan. Every app and the agent use the same rows."</li>
+          <li><b>The apps:</b> "The pro developer's Command Center and the nurse manager's Barrier Tracker."</li>
+          <li><b>Azure:</b> "API Management is the only door to the two model deployments in Foundry, and it signs in with its own identity: no keys." Say <b>preview</b> for Mistral-Large-3.</li>
+          <li><b>One solution:</b> "Everything ships as one solution in a Managed Environment, with your governance."</li>
+          <li><b>One tenant:</b> "One Entra ID tenant across Microsoft 365, Power Platform and Azure."</li>
+        </ul>
+        <p>"One discharge plan in Dataverse. A case manager working in Microsoft 365 and Teams. An agent with tools and skills that hands each writing job to the model we chose for it, as drafts. A pro dev in VS Code. And a nurse manager who built her own app just by describing it. All on one platform, under one set of governance."</p>
+        <p class="muted">The numbers on the arrows are the <a href="technical-guide.html#numbered-flows">numbered flows</a> in the technical guide: 1 ask the agent, 2 read and save in Dataverse as the signed-in user, 3 hand the writing to Foundry through the connector, 4 APIM calls Foundry as its own identity, 5 the Command Center, 6 Barrier Tracker, 7 Graph recall. The orchestrator box still says Claude Sonnet 4.6, and the live agent has since moved to another model; don't read that label out.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>One discharge plan, one tenant, one set of governance.</p><p>Microsoft 365 is where people already work: Teams and Copilot. Graph holds the case manager's mail and chats.</p><p>The agent, in Copilot Studio: instructions, two skills, and tools for Dataverse and Foundry.</p><p>Dataverse holds one copy of the discharge plan. The agent and every app use the same rows.</p><p>On those rows: the pro developer's Command Center, and the nurse manager's Barrier Tracker.</p><p>In Azure, API Management is the only door to the two model deployments in Foundry. It signs in with its own identity, so there are no keys.</p><p>Everything ships as one solution, in a Managed Environment, under your governance.</p><p>And it's all one Entra ID tenant, across Microsoft 365, Power Platform and Azure.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+    <section class="slide" aria-roledescription="slide" aria-label="Discharge Navigator" data-name="end" data-seg="end" data-start="707.07" data-end="719.53">
+      <div class="frame plate cover">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>
+        </div>
+        <h1>Discharge Navigator</h1>
+        <p class="tagline"><span>One plan.</span> Every app. One platform.</p>
+        <p class="chips">
+          <span style="--c: #3fd0bb"><i></i>Microsoft 365 Copilot</span><span style="--c: #3fd0bb"><i></i>Teams</span>
+          <span style="--c: #b896ff"><i></i>Copilot Studio</span><span style="--c: #b896ff"><i></i>Power Apps</span><span style="--c: #b896ff"><i></i>Dataverse</span>
+          <span style="--c: #5aa9ff"><i></i>Microsoft Foundry</span><span style="--c: #5aa9ff"><i></i>Azure API Management</span>
+        </p>
+        <p class="fine">Synthetic data for demonstration · AI output is a draft that clinicians review and sign</p>
+      </div>
+      <aside class="notes">
+        <p><b>End.</b> "One plan. Every app. One platform." Then thanks, and what you'd like them to do next.</p>
+        <!-- narration: written by scripts/build_demo_video.py -->
+        <div class="narration"><p class="when">The video's narration</p><p>One plan. Every app. One platform.</p><p>The voice you've heard is Grant, from Microsoft's MAI-Voice-2.1 model, in preview in Azure Speech.</p></div>
+        <!-- /narration -->
+      </aside>
+    </section>
+
+  </div>
+
+  <div class="controls">
+    <div class="group">
+      <button type="button" id="prev" aria-label="Previous slide">Previous</button>
+      <span id="counter" aria-live="polite"></span>
+      <button type="button" id="next" aria-label="Next slide">Next</button>
+    </div>
+    <div class="group">
+      <button type="button" id="toggle-notes" aria-pressed="false" aria-controls="notes">Notes<kbd>N</kbd></button>
+      <button type="button" id="toggle-full">Full screen<kbd>F</kbd></button>
+    </div>
+  </div>
+  <div class="notes-panel" id="notes" hidden></div>
+</main>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const counter = document.getElementById('counter');
+  const prevButton = document.getElementById('prev');
+  const nextButton = document.getElementById('next');
+  const notesButton = document.getElementById('toggle-notes');
+  const notesPanel = document.getElementById('notes');
+  const videos = [...document.querySelectorAll('.slide video')];
+  const NOTES_KEY = 'amc-deck-notes';
+  // A recording slide holds this far before the end of its stretch, while its last caption is still up.
+  const HOLD_BEFORE_END = 0.65;
+
+  let current = 0;
+
+  // #prompt or #22: a slide's name keeps working when slides move
+  function slideFromHash() {
+    const hash = decodeURIComponent(location.hash.slice(1));
+    const named = slides.findIndex((slide) => slide.dataset.name === hash);
+    if (named >= 0) return named;
+    const n = Number.parseInt(hash, 10);
+    return Number.isNaN(n) ? 0 : Math.min(Math.max(n - 1, 0), slides.length - 1);
+  }
+
+  function clock(seconds) {
+    const s = Math.round(seconds);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  // Where the slide sits in the demo video, from the times build_demo_video.py writes
+  function whenInVideo(slide) {
+    const start = Number.parseFloat(slide.dataset.start);
+    const end = Number.parseFloat(slide.dataset.end);
+    if (Number.isNaN(start) || Number.isNaN(end)) return '';
+    const length = end - start < 10 ? (end - start).toFixed(1) : Math.round(end - start);
+    return `<p class="when">In the video: ${clock(start)} to ${clock(end)} (${length} s)</p>`;
+  }
+
+  function show(index) {
+    current = Math.min(Math.max(index, 0), slides.length - 1);
+    const slide = slides[current];
+    slides.forEach((s, i) => s.classList.toggle('is-current', i === current));
+    counter.textContent = `${current + 1} of ${slides.length}`;
+    prevButton.disabled = current === 0;
+    nextButton.disabled = current === slides.length - 1;
+    notesPanel.innerHTML = whenInVideo(slide) + (slide.querySelector('.notes')?.innerHTML ?? '');
+    playVideoOn(slide);
+    const hash = `#${slide.dataset.name ?? current + 1}`;
+    if (location.hash !== hash) history.replaceState(null, '', hash);
+  }
+
+  // A recording slide plays its stretch of the demo video from the start each time it opens; every other video stops.
+  function playVideoOn(slide) {
+    videos.forEach((video) => { if (!slide.contains(video)) video.pause(); });
+    const video = slide.querySelector('video');
+    if (!video) return;
+    const stopAt = Number.parseFloat(slide.dataset.end) - HOLD_BEFORE_END;
+    const start = () => {
+      if (!slide.classList.contains('is-current')) return;
+      video.currentTime = Number.parseFloat(slide.dataset.start);
+      video.play().then(() => {
+        // timeupdate only fires a few times a second, so check every frame for the stop
+        const check = () => {
+          if (video.paused) return;
+          if (video.currentTime >= stopAt) {
+            video.pause();
+            return;
+          }
+          requestAnimationFrame(check);
+        };
+        check();
+      }).catch(() => { /* blocked or not loaded; a click plays it */ });
+    };
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) start();
+    else video.addEventListener('loadedmetadata', start, { once: true });
+  }
+
+  // Seeking needs a page opened as a file or a server that answers range requests, and python -m http.server doesn't.
+  // From a server like that, load the video into memory once, so each recording slide can start at its own place.
+  // The recording slides wait for this (playVideoOn waits for the metadata).
+  async function videoSource(path) {
+    if (!location.protocol.startsWith('http')) return path;
+    try {
+      const head = await fetch(path, { method: 'HEAD' });
+      if (head.headers.get('accept-ranges') === 'bytes') return path;
+      return URL.createObjectURL(await (await fetch(path)).blob());
+    } catch {
+      return path;
+    }
+  }
+  if (videos.length) videoSource(videos[0].dataset.src).then((src) => videos.forEach((video) => { video.src = src; }));
+
+  function setNotes(isVisible) {
+    notesPanel.hidden = !isVisible;
+    notesButton.setAttribute('aria-pressed', String(isVisible));
+    try { localStorage.setItem(NOTES_KEY, isVisible ? '1' : '0'); } catch { /* storage unavailable */ }
+  }
+
+  function toggleFullScreen() {
+    if (document.fullscreenElement) return document.exitFullscreen();
+    return document.documentElement.requestFullscreen?.();
+  }
+
+  prevButton.addEventListener('click', () => show(current - 1));
+  nextButton.addEventListener('click', () => show(current + 1));
+  notesButton.addEventListener('click', () => setNotes(notesPanel.hidden));
+  document.getElementById('toggle-full').addEventListener('click', () => toggleFullScreen());
+  videos.forEach((video) => video.addEventListener('click', () => playVideoOn(video.closest('.slide'))));
+  document.addEventListener('fullscreenchange', () =>
+    document.documentElement.classList.toggle('presenting', Boolean(document.fullscreenElement)));
+  window.addEventListener('hashchange', () => show(slideFromHash()));
+
+  document.querySelectorAll('.copy-prompt').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const source = document.querySelector(button.dataset.copy);
+      const text = [...source.querySelectorAll('p')].map((p) => p.textContent.trim()).join('\n\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = 'Copied';
+      } catch {
+        button.textContent = 'Copy failed: select the text instead';
+      }
+      setTimeout(() => { button.textContent = 'Copy prompt'; }, 2000);
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const isOnButton = event.target instanceof HTMLButtonElement;
+    const key = event.key;
+    if (['ArrowRight', 'ArrowDown', 'PageDown'].includes(key) || (key === ' ' && !isOnButton)) {
+      event.preventDefault();
+      show(current + 1);
+    } else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(key)) {
+      event.preventDefault();
+      show(current - 1);
+    } else if (key === 'Home') {
+      show(0);
+    } else if (key === 'End') {
+      show(slides.length - 1);
+    } else if (key === 'n' || key === 'N') {
+      setNotes(notesPanel.hidden);
+    } else if (key === 'f' || key === 'F') {
+      toggleFullScreen();
+    }
+  });
+
+  try { setNotes(localStorage.getItem(NOTES_KEY) === '1'); } catch { setNotes(false); }
+  show(slideFromHash());
+</script>
+</body>
+</html>

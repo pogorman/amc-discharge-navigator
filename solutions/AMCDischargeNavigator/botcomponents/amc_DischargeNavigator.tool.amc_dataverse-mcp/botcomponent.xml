@@ -1,0 +1,11 @@
+<botcomponent schemaname="amc_DischargeNavigator.tool.amc_dataverse-mcp">
+  <componenttype>9</componenttype>
+  <description>Microsoft Dataverse MCP server. Lists and describes tables, queries rows and updates records in the Patient (amc_patient), Discharge Plan (amc_dischargeplan) and Discharge Task (amc_dischargetask) tables. Use it for every question about patients, discharge plans, tasks and barriers.</description>
+  <iscustomizable>0</iscustomizable>
+  <name>Dataverse</name>
+  <parentbotid>
+    <schemaname>amc_DischargeNavigator</schemaname>
+  </parentbotid>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+</botcomponent>

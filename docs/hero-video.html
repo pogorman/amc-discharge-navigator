@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hero video · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+<style>
+  .player { margin: 8px 0 20px; }
+  .player video { display: block; width: 100%; max-width: 1100px; aspect-ratio: 16 / 9; border-radius: 10px; background: #081126;
+                  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); }
+  .player-bar { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .player-bar .btn { margin-top: 0; min-width: 104px; border: 0; cursor: pointer; font: 600 14px "Segoe UI", system-ui, sans-serif; }
+  .player-bar .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html" aria-current="page">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="hero-video">Hero video</h1>
+<p class="sub">28.5 seconds, 1920x1080, silent · plus <a href="#demo-video">the full demo video</a>, 12 min 0 s, narrated, with captions · a one-pager in motion that introduces the solution to any customer · made 2026-11-01 from the live apps; second cut the same day: a little slower, with the architecture in your tenant and your guardrails</p>
+
+<div class="player">
+  <video src="assets/hero.mp4" poster="hero/poster.jpg" controls playsinline preload="metadata"></video>
+</div>
+<p>Download: <a href="assets/hero.mp4" download>hero.mp4</a> (H.264, about 7 MB; plays in PowerPoint, Teams, Clipchamp and any browser). The source is a web page, <a href="hero/animation.html">hero/animation.html</a>: open it to play the animation live, and click it to replay.</p>
+
+<h2 id="what-it-shows">What it shows</h2>
+<div class="tablewrap"><table>
+  <tr><th>Time</th><th>Scene</th><th>On screen</th></tr>
+  <tr><td>0–4 s</td><td><b>The hook</b></td><td>"Miguel is medically ready. He's still in a bed." A six-day stay builds up, ending on an avoidable bed-day.</td></tr>
+  <tr><td>4–9.5 s</td><td><b>01 Ask</b></td><td>"Ask where you already work." The question types itself, and the real Discharge Navigator answer in the Command Center reveals his three barriers.</td></tr>
+  <tr><td>9.5–13.5 s</td><td><b>02 Draft</b></td><td>"The paperwork, drafted for you." The prior-auth packet (gpt-5.5) and Spanish patient instructions (Mistral-Large-3, preview), each from a model deployment in Microsoft Foundry and each stamped "Draft · for review".</td></tr>
+  <tr><td>13.5–18 s</td><td><b>03 Act</b></td><td>"Every app works the same plan." The real Command Center, with the open-barriers tile highlighted, and Barrier Tracker (built in Copilot Studio by describing it, preview) striking off the SNF bed acceptance.</td></tr>
+  <tr><td>18–25 s</td><td><b>04 Deploy &amp; govern</b></td><td>"Your tenant. Your guardrails." The architecture builds inside a box labeled "Your Microsoft Entra ID tenant": Microsoft 365 (Teams, Microsoft 365 Copilot), Power Platform (the agent, Barrier Tracker, the Command Center and Dataverse, shipped as one solution from dev to test to production) and Azure in your own subscription (API Management and the two model deployments in Foundry). Then six guardrails appear one at a time, and each turns the part it protects green: Entra ID sign-in and Conditional Access (the tenant), Copilot activity audited in Microsoft Purview (Microsoft 365), a Managed Environment under your DLP policies (Power Platform), runs as the signed-in user (Dataverse), the agent can read and update but never delete (the agent), and managed identity to Foundry with no model keys (Azure). Deploy and Govern were two scenes until 2026-11-03 (O'G: combine them).</td></tr>
+  <tr><td>25–28.5 s</td><td><b>End card</b></td><td>"Discharge Navigator. One plan. Every app. One platform." The products used, and "Synthetic data for demonstration · AI output is a draft that clinicians review and sign."</td></tr>
+</table></div>
+
+<h2 id="using-it">Using it</h2>
+<ul>
+  <li><b>In the deck:</b> its end card is the deck's <a href="deck.html#title">title card</a>, and the next slide, the <a href="deck.html#overview">overview</a>, plays the rest of it (from the demo video) and holds on Govern. That's how the demo video opens too.</li>
+  <li><b>On its own:</b> it's silent and the captions carry it, so it works in an email, a Teams post or a looping booth screen.</li>
+  <li><b>If you talk over it:</b> "A patient who's medically ready but still in a bed. Ask the agent what's blocking him, let it draft the paperwork, and every app sees the same plan. And all of it runs in your tenant, under your policies."</li>
+</ul>
+<p class="callout">It follows the narration rules: model output is always a draft for clinicians to review and sign, previews are labeled, and the models are "model deployments in Foundry." The screenshots are the live apps on synthetic data, and the Barrier Tracker card is drawn, not a screenshot. The Deploy &amp; govern scene lists what the platform enforces in a customer's own tenant. In this demo tenant og-svc is a Managed Environment but has no DLP policy yet, so if anyone asks, the policies are theirs to set.</p>
+
+<h2 id="changing-it">Changing it</h2>
+<p>Edit <code>hero/animation.html</code> (the timeline is in each element's <code>--d</code> delay, in milliseconds), preview it in a browser, then render it again with the steps in the <a href="runbook.html#hero-video">runbook</a>. The screenshots are <code>hero/agent-chat.jpg</code> and <code>hero/dashboard.jpg</code>; retake them if the apps change.</p>
+
+<h2 id="demo-video">The full demo video</h2>
+<p>A 12 min 0 s narrated, captioned cut of the whole demo, stitched on 2026-11-01 from O'G's beat recordings, so the demo can run without a presenter. It opens on this video's title card ("Discharge Navigator"), then a card with the use case and the solution, then this video's overview, then a card that moves into the details ("Now let's see it work.", with the seven chapters lighting up) and a card with the cast. Each beat then gets a chapter card, a "What you'll see" card that says what's coming and which pieces are involved, its recording in a frame like this video's (the whole window, at its own zoom, so you can always see where you are), captions underneath, and an amber speed badge wherever a wait is sped up. Beat 1 also carries a "Microsoft 365 Copilot · with Work IQ" tag at the window's top-right corner, so it's clear that's Copilot on its own, and beat 2 a "Microsoft Copilot Studio · agent in Microsoft 365 Copilot" tag for the agent.</p>
+<p>At the moments that need explaining, the recording pauses (an amber "Paused" badge shows it): the rest of the screen dims, a teal box moves to each part in turn, and a note says what it is. Beat 1 pauses before the first prompt (Work IQ, the Auto model picker, Chat with Cowork and Code, the left nav, the prompt) and on the answer (the hold-up and the two emails it cites). Beat 2 pauses on the Agents list. Beat 3 pauses on the agent's setup in Copilot Studio, on the Spanish instructions (why Spanish) and on the prior-auth packet (the quote the payer asked for, and what's still missing); its scrolling has the stops between scroll-wheel turns cut out. Beat 6 pauses on the App (preview) tile. The close pauses on the architecture, a part at a time. Every recording's frame says "Synthetic data · recorded in a demo tenant · narrated by an AI voice (MAI-Voice-2.1, preview)".</p>
+<p><b>It's narrated by an AI voice</b> (O'G, 2026-11-03, <a href="decisions.html#adr-0018">ADR-0018</a>): Grant, a voice on Microsoft's MAI-Voice-2.1 model (public preview) in Azure Speech, generated from the project's own Foundry resource with Entra ID sign-in, and the video's last line says so. The narration goes with the captions rather than reading them out, and follows the same guardrails. Where a line needs more time than the picture gave it, the build makes room: a pause, card or held frame stays up longer, or a sped-up stretch plays a little slower. The captions file is the narration, word for word.</p>
+<p>The <a href="deck.html">deck</a> follows this video slide for slide (O'G, 2026-11-03): the same cards, the deck's own request and architecture slides, and a slide for each recording that plays its stretch of this video. Each slide's notes say what to say over it and where it sits in the video, and end with the narration the video speaks there. The deck plays the video muted, so you can still present it live. The build script keeps the two in step (<a href="runbook.html#demo-video">runbook</a>).</p>
+<div class="player">
+  <video id="demo-player" src="assets/demo-video.mp4" poster="demo-video/poster.jpg" controls playsinline preload="metadata">
+    <track kind="subtitles" src="assets/demo-video.vtt" srclang="en" label="English (narration)">
+  </video>
+  <div class="player-bar">
+    <button type="button" class="btn" id="demo-toggle" aria-controls="demo-player">&#9654;&#xFE0E; Play</button>
+    <span class="muted">or press Space or K</span>
+  </div>
+</div>
+<p>Download: <a href="assets/demo-video.mp4" download>demo-video.mp4</a> (H.264, about 81 MB, with chapters, so players that list them can jump to a beat) and the narration as captions, <a href="assets/demo-video.vtt" download>demo-video.vtt</a>. The video is in git; the recordings it's cut from aren't (<code>videos-do-not-put-in-repo/</code>, which O'G keeps on each laptop). Rebuild it with the <a href="runbook.html#demo-video">runbook</a> steps. First cut 2026-11-01; second cut 2026-11-02 (title card first, then the card into the details; product tags on beats 1 and 2; no zooms); third cut the same day (pro dev before the huddle, so the huddle runs into the reveal; a "What you'll see" card after each chapter card); fourth cut 2026-11-03 (beat 3 from the start of its recording, with a paused tour of the agent's setup); fifth cut the same day (a use-case card, the cast as a card, pauses with callouts in beats 1, 2, 3, 6 and 7, beats 1, 2 and 6 from the start of their recordings, smooth scrolling, the og-svc question cut, no "Her app" slide, and the hero's Deploy and Govern merged); sixth cut the same day (narrated by an AI voice, Grant on MAI-Voice-2.1).</p>
+<div class="tablewrap"><table>
+  <tr><th>Starts</th><th>Chapter</th><th>From</th><th>What it shows</th></tr>
+  <tr><td>0:00</td><td><b>Intro</b></td><td>This video's title card, a card drawn by the build script, then this video up to the end of Deploy &amp; govern</td><td>Discharge Navigator; the use case (academic medical centers, discharge planning) and the solution; then the whole idea in 25 seconds.</td></tr>
+  <tr><td>0:50</td><td><i>The details</i> (part of Intro)</td><td>A card drawn by the build script</td><td>“Now let's see it work.” Seven steps, from one question in Microsoft 365 Copilot to an app a nurse manager built herself.</td></tr>
+  <tr><td>0:55</td><td><b>Meet the cast</b></td><td>A card drawn by the build script</td><td>Who's who, a row each, colored by where it runs, and the patient, Miguel Reyes.</td></tr>
+  <tr><td>1:15</td><td><b>01 Graph recall</b></td><td><code>beat-1-m365-copilot.mp4</code></td><td>"Microsoft 365 Copilot, out of the box". A pause before the prompt (Work IQ, Auto, Chat with Cowork and Code, the left nav, the prompt), then Copilot finds the hold-up in the case manager's email; a pause on the answer (the hold-up, the payer's PA-2210-7734 request, Maple Grove's bed offer); then both emails open. A tag at the top right says it's Microsoft 365 Copilot with Work IQ, no agent.</td></tr>
+  <tr><td>2:46</td><td><b>02 The agent in Microsoft 365</b></td><td><code>beat-3-new.mp4</code> (re-recorded 2026-11-03)</td><td>"Now an agent built for the job". Agents &amp; Skills, then a pause on the list and Discharge Navigator; then it lists the five patients medically ready but still here, read from Dataverse as the user (Miguel Reyes, two days), and Miguel's three barriers: the prior authorization, the SNF placement and transport, with the updated PT note as the main dependency. A tag at the top right says it's a Copilot Studio agent in Microsoft 365 Copilot.</td></tr>
+  <tr><td>4:00</td><td><b>03 Behind the scenes: how it's built</b></td><td><code>beat-3-in-copilot-studio.mp4</code></td><td>"Inside Copilot Studio: how it's built". Copilot Studio's home, Agents and Discharge Navigator; a paused tour of its setup (instructions, channels, skills, tools, knowledge, connected agents and memory); the model choice and publishing; the Spanish patient instructions (Mistral Large 3, preview) with a pause on why they're in Spanish; the prior-auth packet (gpt-5.5) with a pause on "150 ft with a rolling walker and standby assist" and the missing PT note.</td></tr>
+  <tr><td>6:35</td><td><b>04 Pro dev</b></td><td><code>pro-code-new.mp4</code> (re-recorded 2026-11-03)</td><td>"A pro developer's app, written in code". The Command Center, paused on its numbers, charts and plans; Miguel's plan, paused on his chart, the agent's drafts (no packet yet) and his tasks and barriers; its agent chat lists his three barriers, then drafts the prior-auth packet and saves it (sped up 20x), paused on the model field (gpt-5.5); back in the app, the saved draft on his plan, paused on its Draft label.</td></tr>
+  <tr><td>8:54</td><td><b>05 The huddle</b></td><td><code>beat-4-barrier-tracker-add-note-closeout.mp4</code></td><td>"The 6 East huddle board" (what Barrier Tracker is; who built it comes next), then the nurse manager adds the Maple Grove note and completes the bed acceptance; 9 open barriers become 8.</td></tr>
+  <tr><td>9:27</td><td><b>06 The reveal</b></td><td>The deck's <a href="deck.html#prompt">request slide</a>, then <code>creating-mgd-runtime-barrier-tracker.mp4</code></td><td>"Her request, then the build". Her prompt; a pause on the App (preview) tile; Copilot Studio building Barrier Tracker on the hospital's data (sped up, the og-svc question cut); it ends on "Even if you know nothing about building apps, you can describe one."</td></tr>
+  <tr><td>10:39</td><td><b>07 One plan. Every app. One platform.</b></td><td>The deck's <a href="deck.html#architecture">architecture slide</a></td><td>"How it all fits together", then the architecture, paused a part at a time: Microsoft 365, the agent, Dataverse, the apps, Azure, the one solution and the one tenant.</td></tr>
+  <tr><td>11:47</td><td><b>End</b></td><td>This video's end card</td><td></td></tr>
+</table></div>
+<p>The captions and the narration describe what the recordings actually show:</p>
+<ul>
+  <li><b>Chapters 2 and 4 were re-recorded on 2026-11-03</b>, so both show Miguel's three barriers, before the huddle closes one in chapter 5. Chapter 4 saves the prior-auth packet to his plan; chapter 3, recorded earlier, drafts it and asks before saving.</li>
+  <li><b>Beat 3 changes the agent's model.</b> The recording switches the orchestrating model from Claude Sonnet 4.6 to GPT 6.1 Sol, then publishes. The captions say "a choice of model" without naming it, but the deck's architecture slide, shown in the close, still says Claude Sonnet 4.6.</li>
+  <li><b>Beat 3's drafts aren't saved</b>; the agent asks first, and the captions say so.</li>
+  <li><b>Beat 4 starts on the board.</b> The recording opens Barrier Tracker from Copilot Studio's app list; that part is cut so the reveal stays in beat 6.</li>
+  <li>The Foundry portal (beat 3) and VS Code (beat 5) weren't recorded, so they aren't in it.</li>
+</ul>
+</main>
+<script>
+  (function () {
+    var video = document.getElementById('demo-player');
+    var btn = document.getElementById('demo-toggle');
+    function toggle() {
+      if (video.paused || video.ended) { video.play(); } else { video.pause(); }
+    }
+    function label() {
+      btn.textContent = video.paused || video.ended ? '▶︎ Play' : '❚❚ Pause';
+    }
+    btn.addEventListener('click', toggle);
+    ['play', 'pause', 'ended'].forEach(function (name) { video.addEventListener(name, label); });
+    // Space and K play or pause the demo video, except where they already do something.
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) { return; }
+      if (e.target.closest('a, button, input, textarea, select, video, [contenteditable]')) { return; }
+      if (e.key === ' ' || e.key === 'k' || e.key === 'K') { e.preventDefault(); toggle(); }
+    });
+  })();
+</script>
+</body>
+</html>

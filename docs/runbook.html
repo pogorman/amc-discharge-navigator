@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Runbook · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html" aria-current="page">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="runbook">Runbook</h1>
+<p>Operational procedures. Run commands from the repo root unless noted. Python scripts read <code>.env</code> (see <a href="#new-machine">new machine</a>) and authenticate with the signed-in az account (<code>AUTH_MODE=azcli</code>). Every ID is on the <a href="environments.html">Environments</a> page.</p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Check</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node.js 22+</td>
+<td><code>node -v</code></td>
+<td>For the Code App</td>
+</tr>
+<tr>
+<td>Python 3.12+</td>
+<td><code>python --version</code></td>
+<td><code>pip install --upgrade azure-identity requests PowerPlatform-Dataverse-Client</code></td>
+</tr>
+<tr>
+<td>Azure CLI</td>
+<td><code>az account show</code></td>
+<td>Must be signed in to tenant <code>&lt;tenant-id&gt;</code> as admin@&lt;tenant&gt; (<a href="known-issues.html#ki-08">KI-08</a>)</td>
+</tr>
+<tr>
+<td>PAC CLI 2.13.1+</td>
+<td><code>pac --version</code>, <code>pac org who</code></td>
+<td>A dotnet global tool: <code>dotnet tool update -g Microsoft.PowerApps.CLI.Tool</code>. Needed for <code>pac copilot pull/push/publish</code></td>
+</tr>
+<tr>
+<td>Power Apps CLI (<code>pa</code>)</td>
+<td><code>cd code-app &amp;&amp; npx --no-install pa auth status</code></td>
+<td>Project-local devDependency, not global (<a href="known-issues.html#ki-22">KI-22</a>). Account admin@&lt;tenant&gt;</td>
+</tr>
+<tr>
+<td>Git, GitHub CLI</td>
+<td><code>gh auth status</code></td>
+<td>For the repo <code>pogorman/amc-agent-demo</code></td>
+</tr>
+<tr>
+<td>VS Code</td>
+<td></td>
+<td>With GitHub Copilot, for the pro-dev beat</td>
+</tr>
+</tbody>
+</table></div>
+
+<h2 id="sign-ins">Sign-ins</h2>
+<p>All three CLIs sign in as admin@&lt;tenant&gt;.onmicrosoft.com (since 2026-11-01; <a href="decisions.html#adr-0015">ADR-0015</a>). az and <code>pa</code> are machine-global. The the-agents repo uses the same tenant, so they rarely need switching now, but check them before you run anything here (<a href="known-issues.html#ki-08">KI-08</a>).</p>
+<pre><code>az login --tenant &lt;tenant-id&gt;
+az account set --subscription &lt;subscription-id&gt;
+pac auth create --environment https://og-svc.crm.dynamics.com
+cd code-app &amp;&amp; npx --no-install pa auth login
+</code></pre>
+<p>Check:</p>
+<pre><code>az account show --query "{user:user.name, tenant:tenantId}"   # admin@&lt;tenant&gt;, &lt;tenant-id&gt;
+pac org who                                                   # og-svc
+cd code-app &amp;&amp; npx --no-install pa auth status                # active account admin@&lt;tenant&gt;
+</code></pre>
+<p>If <code>pa</code> is signed in to both tenants, switch the active account instead of signing in again: <code>npx --no-install pa auth switch --account admin@&lt;tenant&gt;.onmicrosoft.com --non-interactive</code>. The previous tenant's account was admin@&lt;previous-tenant&gt;.onmicrosoft.com.</p>
+
+<h2 id="re-seed">Re-seed the data</h2>
+<p>The seed data is relative to an anchor date (default today), so dates go stale. Re-seed on recording day, or a day or two ahead with <code>--anchor</code> set to the recording date. The Command Center and the agent measure against the real clock, so data seeded ahead looks off until that day, then reads correctly.</p>
+<pre><code>python scripts/seed_data.py --reset                        # anchor = today
+python scripts/seed_data.py --reset --anchor 2026-10-27    # anchor = a given date
+python scripts/expected_kpis.py --as-of 2026-10-27         # the numbers as they'll read that day
+</code></pre>
+<ul>
+<li>Takes about 10 minutes: deletes run one at a time (<a href="known-issues.html#ki-24">KI-24</a>).</li>
+<li>Claude Code's auto mode blocks it as a mass delete unless O'G says "re-seed it" in that turn (<a href="known-issues.html#ki-25">KI-25</a>).</li>
+<li>Creates 36 patients, 36 plans (22 active, 14 discharged in the prior 14 days) and 209 tasks. The hero is DP-1001 Miguel Reyes (<a href="dataverse.html#seed-data">Dataverse</a>).</li>
+<li>Clears the saved agent drafts (<code>amc_patientsummary</code>, <code>amc_priorauthpacket</code>) and reopens every barrier a rehearsal closed.</li>
+</ul>
+
+<h2 id="checks">Checks</h2>
+<pre><code>python scripts/preflight.py          # publisher, solution and tables exist; no collisions
+python scripts/verify_seed.py        # data counts and the hero patient
+python scripts/expected_kpis.py      # the Command Center's numbers, computed from live data
+python scripts/test_foundry.py       # both deployments, direct with Entra ID
+python scripts/test_foundry.py --apim   # both deployments through APIM (the connector's path)
+python scripts/check_governance.py   # read-only: Managed Environment, and which DLP policies apply
+</code></pre>
+<p>Expected KPIs and the full smoke-test matrix: <a href="testing.html#scripts">Testing</a>.</p>
+
+<h2 id="edit-the-agent">Edit the agent</h2>
+<p><code>agent/</code> is a PAC-connected workspace. Portal edits and repo edits both work, but <strong>always pull before you push</strong>: a portal edit can swap a tool's connection reference (<a href="known-issues.html#ki-06">KI-06</a>).</p>
+<pre><code>pac copilot pull --project-dir ./agent
+# edit agent/settings.mcs.yml, agent/capabilities/tools/*.mcs.yml or agent/behaviors/*
+pac copilot push --project-dir ./agent
+</code></pre>
+<ul>
+<li>Check the preferred solution before the push, and solution membership after it (<a href="#solution-membership">below</a>).</li>
+<li>The MCP tool trim is the <code>allowedTools</code> list in <code>agent/capabilities/tools/amc_dataverse-mcp.mcs.yml</code>.</li>
+<li>Inline skills get rewritten to <code>behaviors/&lt;name&gt;/SKILL.md</code> + <code>skill.mcs.yml</code> on the first push (<a href="known-issues.html#ki-16">KI-16</a>).</li>
+<li>Don't put multi-line text in <code>pac copilot init --instructions</code> (<a href="known-issues.html#ki-04">KI-04</a>). Never init again without reporting and removing the solution and publisher it creates (<a href="known-issues.html#ki-03">KI-03</a>).</li>
+<li>Log the change in the <a href="copilot-studio.html#edit-log">Copilot Studio edit log</a>, then publish.</li>
+</ul>
+
+<h2 id="publish-the-agent">Publish the agent</h2>
+<pre><code>pac copilot publish --environment &lt;environment-id&gt; --bot 995d5b75-d488-42ba-8a99-9a5206a02f1e
+</code></pre>
+<ul>
+<li><strong>Claude publishes for O'G.</strong> Claude Code's auto-mode classifier blocks this command unless that turn says to publish ("publish it") or the allow rule <code>Bash(pac copilot publish:*)</code> is set with <code>/permissions</code>. If it's blocked, Claude says which one is needed and doesn't work around it (<a href="known-issues.html#ki-21">KI-21</a>).</li>
+<li>You can also select <strong>Publish</strong> in the Copilot Studio portal.</li>
+<li>After publishing, check solution membership (below) and rerun the <a href="testing.html#smoke-tests">smoke tests</a> in Teams or M365 Copilot.</li>
+</ul>
+
+<h2 id="solution-membership">Solution membership</h2>
+<p>New components land in the maker's preferred solution, along with the tables they depend on (<a href="known-issues.html#ki-05">KI-05</a>). O'G's preferred solution is now <strong>AMCDischargeNavigator</strong> (it was MedicaidIntegrityLab until 2026-10-19). <strong>Never let AMC components land in another project's solution.</strong></p>
+<ol>
+<li><strong>Before an init or push:</strong> check the preferred solution.
+<pre><code>GET /api/data/v9.2/WhoAmI                                        → UserId
+GET /api/data/v9.2/usersettingscollection(&lt;UserId&gt;)?$select=_preferredsolution_value
+GET /api/data/v9.2/solutions(&lt;that id&gt;)?$select=uniquename     → AMCDischargeNavigator
+</code></pre></li>
+<li><strong>After it:</strong> for each of our object ids (the bot <code>995d5b75-…</code>, its components, the connection references, the 3 tables, the connector, the Code App <code>a1951694-…</code>), list the solutions that contain it.
+<pre><code>GET /api/data/v9.2/solutioncomponents?$select=objectid,componenttype
+    &amp;$filter=objectid eq &lt;id&gt;&amp;$expand=solutionid($select=uniquename)
+</code></pre>
+Anything other than <code>AMCDischargeNavigator</code> (and the system <code>Default</code> solution) needs removing.</li>
+<li><strong>Remove</strong> membership only. This deletes nothing, but it changes another project's solution, so get O'G's OK first.
+<pre><code>POST /api/data/v9.2/RemoveSolutionComponent
+{
+  "SolutionComponent": {
+    "@odata.type": "Microsoft.Dynamics.CRM.solutioncomponent",
+    "solutioncomponentid": "&lt;objectid&gt;"
+  },
+  "ComponentType": &lt;componenttype&gt;,
+  "SolutionUniqueName": "&lt;other solution&gt;"
+}
+</code></pre>
+Passing a raw <code>ComponentId</code> instead of the entity reference returns 400.</li>
+</ol>
+
+<h2 id="deploy-the-code-app">Deploy the Code App</h2>
+<p>Ask O'G before deploying, unless he already said to deploy that change.</p>
+<pre><code>cd code-app
+# bump the version in src/version.ts and package.json first
+npm run build
+pac code push --solutionName AMCDischargeNavigator
+</code></pre>
+<ul>
+<li><code>pac code push</code> uses pac's sign-in (check <code>pac org who</code> shows og-svc) and updates the existing app by the appId in <code>power.config.json</code>. Used for v1.2.0 on 2026-11-01.</li>
+<li>The npm <code>pa</code> CLI keeps its own sign-in (<a href="known-issues.html#ki-33">KI-33</a>). To deploy with it instead: <code>npx --no-install pa auth login</code>, then <code>npx --no-install pa app push --non-interactive</code>. Don't add <code>--solution-id</code>: it fails with "sign-in session has expired … non-interactive mode" (<a href="known-issues.html#ki-07">KI-07</a>).</li>
+<li>Never push without a successful build in the same session.</li>
+<li>Afterwards, check that the app is still only in AMCDischargeNavigator (<a href="#solution-membership">above</a>), <a href="#re-export-the-solution">re-export the solution</a>, update <code>code-app/memory-bank.md</code>, and add a <a href="changelog.html">changelog</a> entry.</li>
+</ul>
+
+<h2 id="hero-video">Render the hero video</h2>
+<p>The <a href="hero-video.html">hero video</a> is a web page, <code>docs/hero/animation.html</code>, rendered frame by frame to <code>docs/assets/hero.mp4</code>. Every animation starts at 0 with its own delay, so <code>?capture</code> pauses them all and <code>window.seek(ms)</code> shows any moment.</p>
+<ol>
+<li>Serve the docs: <code>cd docs &amp;&amp; python -m http.server 8765</code>. Open <code>http://localhost:8765/hero/animation.html</code> to check it plays (click to replay).</li>
+<li>Capture 855 frames (28.5 s at 30 fps) at 1920x1080 with Playwright. Claude runs this through the Playwright MCP's <code>browser_run_code_unsafe</code>, in two calls of about 430 frames (about 40 seconds each); frames go to the gitignored <code>.playwright-mcp/frames/</code>:
+<pre><code>await page.setViewportSize({ width: 1920, height: 1080 });
+await page.goto('http://localhost:8765/hero/animation.html?capture');
+await page.evaluate(() =&gt; document.fonts.ready);
+for (let f = 0; f &lt; 855; f++) {
+  await page.evaluate((ms) =&gt; window.seek(ms), (f * 1000) / 30);
+  await page.screenshot({ path: `.playwright-mcp/frames/f${String(f).padStart(4, '0')}.jpg`, type: 'jpeg', quality: 93 });
+}</code></pre></li>
+<li>Encode with an ffmpeg that has H.264 (Playwright's own ffmpeg only writes WebM). <code>pip install imageio-ffmpeg</code> in a throwaway venv gives one. Convert to standard color range, or PowerPoint shows it washed out:
+<pre><code>ffmpeg -framerate 30 -i .playwright-mcp/frames/f%04d.jpg -vf "scale=in_range=full:out_range=tv,format=yuv420p" -color_range tv -c:v libx264 -preset slow -crf 18 -movflags +faststart docs/assets/hero.mp4
+ffmpeg -ss 28.1 -i docs/assets/hero.mp4 -frames:v 1 -q:v 3 docs/hero/poster.jpg</code></pre></li>
+<li>Screenshots: <code>hero/agent-chat.jpg</code> is the Command Center's chat panel answering "What's still blocking Miguel Reyes?" (cropped to the panel), and <code>hero/dashboard.jpg</code> is the dashboard with the Power Apps bar cropped off. Take them in Chrome at about 1372x820, then crop: <code>-vf "crop=607:752:765:48"</code> for the panel and <code>-vf "crop=1372:752:0:48"</code> for the dashboard.</li>
+<li>Delete <code>.playwright-mcp/frames/</code> afterwards.</li>
+</ol>
+
+<h2 id="demo-video">Build the demo video</h2>
+<p>The <a href="hero-video.html#demo-video">full demo video</a> is built by <code>scripts/build_demo_video.py</code> from O'G's beat recordings. The edit is at the top of the script: for each beat, which stretches of the recording to keep, how fast to play them (anything faster than 1x gets a speed badge), the whole window (the script can crop, but O'G wants no zooms: viewers need the context), and the captions, timed in the recording's own seconds. A part can also pause on its last frame for a tour (<code>tour=</code>, as in beat 3's <code>STUDIO_TOUR</code>): the rest of the screen dims, a box moves to each part of the screen in turn, and a note beside it says what it is. Its boxes are in the recording's (or the slide's) pixels, each note goes on the first side where it fits unless the step names one, and the tour's caption is its own. A slide can have a tour too (<code>tour=</code> on the slide, as on the architecture). Scrolling through a response uses <code>scroll()</code>: only the stretches where the picture moves, so the stops between scroll-wheel turns are cut (measure them with a frame-difference pass over the recording). It draws the frame, captions and chapter cards with Pillow and joins everything with ffmpeg.</p>
+<ol>
+<li>The recordings go in <code>videos-do-not-put-in-repo/</code>, named as in the script (<code>beat-1-m365-copilot.mp4</code> to <code>beat-5-agent-in-code-app.mp4</code>, plus <code>creating-mgd-runtime-barrier-tracker.mp4</code> and <code>beat-3-new.mp4</code> and <code>pro-code-new.mp4</code>, the second takes of chapters 2 and 4). A recording at another size gets its own 16:9 crop, like <code>FULL_1908</code>. The folder is gitignored and O'G keeps a copy on each laptop: never commit the recordings.</li>
+<li>Two deck slides appear in the video as stills, in git as <code>docs/demo-video/&lt;slide name&gt;.png</code>: <code>prompt</code> and <code>architecture</code>. The use-case and cast cards are drawn by the script (text in <code>INTRO</code> and <code>CAST</code>). If one of those slides changes, capture it again: serve <code>docs/</code>, open <code>deck.html#&lt;slide name&gt;</code> at 1920x1080 and screenshot that slide's <code>.frame</code> element (1647x926). Claude does this with the Playwright MCP. The logos on the tags at the window's top right are <code>docs/demo-video/copilot-logo.png</code> (beat 1, Microsoft 365 Copilot) and <code>copilot-studio-logo.png</code> (beat 2, Copilot Studio, from Microsoft's <a href="https://learn.microsoft.com/en-us/power-platform/guidance/icons">Power Platform icons</a>); a beat gets a tag with <code>brand=</code>.</li>
+<li>In a throwaway venv, <code>pip install pillow numpy imageio-ffmpeg</code> (on an ARM64 laptop such as og-surface, make the venv with the x64 Python: <code>py -V:3.13 -m venv &lt;dir&gt;</code>, <a href="known-issues.html#ki-35">KI-35</a>), then from the repo root run <code>python scripts/build_demo_video.py</code>. A full build takes about 25 minutes (the cards are drawn frame by frame; <code>--only</code> rebuilds take a few) and writes <code>docs/assets/demo-video.mp4</code> and <code>demo-video.vtt</code>; work files go to <code>videos-do-not-put-in-repo/build/work/</code>. Commit the new MP4 and VTT. Each re-render adds about 80 MB to the repo's history (the file is 81 MB since 2026-11-03; GitHub refuses files over 100 MB, so a longer cut needs the final join's CRF raised from 18 to about 21, or Git LFS), so commit finished cuts, not every try. The poster is the title card at 2.5 s; refresh it if the opening changes: <code>ffmpeg -ss 2.5 -i docs/assets/demo-video.mp4 -frames:v 1 -q:v 3 docs/demo-video/poster.jpg</code>.</li>
+<li><b>The narration</b> (O'G, 2026-11-03, <a href="decisions.html#adr-0018">ADR-0018</a>) is in the script next to the captions: <code>say=</code> on a segment, a recording or a slide, <code>say=</code> on each tour step, and <code>CHAPTER_SAY</code> for the chapter cards (each runs on into its "What you'll see" card). Times are on the captions' clock; <code>None</code> means right after the line before, which is what to use for a line over a held last frame. The voice is <code>VOICE</code>, Grant on MAI-Voice-2.1 (public preview) in Azure Speech, from the Foundry resource named in <code>.env</code> (<code>FOUNDRY_ACCOUNT</code>), so the build needs az signed in to the demo tenant with Cognitive Services User on that resource (<a href="known-issues.html#ki-36">KI-36</a>). Each line is generated once and kept in <code>build/work/voice/</code>, so changing a line sends only that line to the service. <code>SAY_AS</code> tells the voice how to say a few words (Microsoft 365, gpt-5.5, MAI-Voice-2.1, PT, MCP, 6 East). Before anything is drawn, the build makes room for every line: a tour step, card or slide stays up until its line ends, a sped-up stretch between two lines plays slower, or a frame holds a little longer. It mixes the lines into one track, and the captions file (<code>demo-video.vtt</code>) is the narration, word for word. Keep the lines inside the narration guardrails, like the captions.</li>
+<li><b>The deck follows the video</b> slide for slide (O'G, 2026-11-03). Every build checks <code>docs/deck.html</code> against the video's order and stops with the list of slides it expects if they differ; then it writes the card slides (from <code>CHAPTERS</code>, <code>BRIEFS</code> and <code>NEXT</code>) each slide's place in the video (<code>data-start</code>, <code>data-end</code>, which the recording slides play, muted) and, at the end of each slide's notes, the narration spoken over it. <code>python scripts/build_demo_video.py --deck</code> does just that, from the last build. When a change adds, moves or removes a segment, change the deck's slides to match (each slide's <code>data-seg</code> names its segment; <code>b6.1</code> is the second item of <code>b6</code>), and update the slide notes whenever captions change. Commit the deck with the video.</li>
+<li>Check it: <code>python scripts/build_demo_video.py --review</code> saves a frame from the middle of every caption, six to a sheet, in <code>build/work/review/</code>.</li>
+<li>After changing one beat, <code>python scripts/build_demo_video.py --only b2</code> rebuilds just that segment and rejoins the rest (and any other segment whose length the narration changed). The keys are <code>open</code> (the title card), <code>intro</code> (the use case), <code>hero</code>, <code>next</code> (the "Now let's see it work." card, text in <code>NEXT</code>), <code>cast</code>, <code>card1</code> to <code>card7</code>, <code>brief1</code> to <code>brief7</code> (the "What you'll see" cards, text in <code>BRIEFS</code>), <code>b1</code> to <code>b7</code> and <code>end</code>; after a new hero video, rebuild <code>open</code>, <code>hero</code> and <code>end</code>, and check the cut points (the title card, at the start and the end, starts where Deploy &amp; govern has gone, 25.6 s, and the overview ends where it starts to leave, 25.0 s).</li>
+</ol>
+
+<h2 id="re-export-the-solution">Re-export the solution</h2>
+<p>After any metadata change (agent, connector, connection references, Code App, tables):</p>
+<pre><code>pac solution export --name AMCDischargeNavigator --path ./solutions/AMCDischargeNavigator.zip --managed false
+pac solution unpack --zipfile ./solutions/AMCDischargeNavigator.zip --folder ./solutions/AMCDischargeNavigator --packagetype Unmanaged
+rm ./solutions/AMCDischargeNavigator.zip
+</code></pre>
+<p>Then commit. If the export fails on a connection reference, check that it has <code>customconnectorid</code> set (<a href="known-issues.html#ki-15">KI-15</a>).</p>
+
+<h2 id="foundry-connection">Foundry connection</h2>
+<p>The agent's Foundry tool runs on the connection <code>amc-foundry-key</code> with maker auth (<a href="decisions.html#adr-0007">ADR-0007</a>). If the drafts start failing for everyone, check that connection first in Power Apps &gt; Connections (og-svc).</p>
+<p>To recreate it, run <code>python scripts/create_foundry_connection.py</code>. It reads the APIM key at runtime without printing or saving it, creates the connection if there isn't one with that name, and binds the agent's connection reference. Then retest with <code>python scripts/test_foundry.py --apim</code> and one draft prompt.</p>
+
+<h2 id="azure-provisioning">Azure provisioning</h2>
+<p>Both scripts are idempotent and read the subscription, resource group, region and names from <code>.env</code> (today: <code>cuh-discharge-foundry2</code>, <code>cuh-discharge-apim2</code>). Run them from Git Bash; they export <code>MSYS_NO_PATHCONV=1</code> (<a href="known-issues.html#ki-14">KI-14</a>).</p>
+<pre><code>bash infra/provision-foundry.sh   # RG, Foundry account, project, both deployments, your direct-call role
+bash infra/provision-apim.sh      # APIM, managed identity + Cognitive Services User on Foundry,
+                                  # then calls infra/apim_config.py: API /foundry policy, subscription discharge-navigator
+</code></pre>
+<p><code>apim_config.py</code> exists because <code>az rest</code> crashes on Windows when it prints the APIM policy's BOM (<a href="known-issues.html#ki-13">KI-13</a>); use it rather than <code>az rest</code> for policy changes. Details: <a href="foundry.html#apim">Foundry</a>.</p>
+
+<h2 id="graph-seeding">Graph seeding (beat 1)</h2>
+<p><strong>Demo tenant: seeded 2026-11-01</strong> (both emails, sent by O'G from Carole Poland; the Teams chat with the agent about Miguel happened the same day). The old tenant was seeded 2026-10-19. This tenant has no Adele Vance; send from any sample user with a mailbox, for example Carole Poland (CaroleP@&lt;tenant&gt;), to admin@&lt;tenant&gt;.onmicrosoft.com. It takes about 10 minutes, then Microsoft 365 Copilot has to index it. That's usually hours; there's no published time (<a href="known-issues.html#ki-10">KI-10</a>, <a href="decisions.html#adr-0011">ADR-0011</a>). Redo it only if the recall check fails.</p>
+<ol>
+<li>In Teams, ask Discharge Navigator: <em>"What's holding up Miguel Reyes's discharge? I need to know about his SNF placement."</em></li>
+<li>From a sample tenant user (for example <strong>Adele Vance</strong>), send two emails to your account.</li>
+</ol>
+<p><strong>Email 1: as "Maple Grove Admissions"</strong></p>
+<pre class="wrap"><code>Subject: Re: Miguel Reyes - SNF referral
+
+Hi Patrick,
+
+We can accept Mr. Reyes tomorrow once his Medicare Advantage authorization is approved. Please send the auth number as soon as you have it so we can hold the bed.
+
+Thanks,
+Maple Grove Rehabilitation - Admissions
+</code></pre>
+<p><strong>Email 2: as "Contoso Health Plan Utilization Management"</strong></p>
+<pre class="wrap"><code>Subject: PA-2210-7734 - Additional information requested
+
+Hello,
+
+To complete review of the skilled nursing facility request for Miguel Reyes, please provide updated PT notes including ambulation distance and level of assist.
+
+Contoso Health Plan - Utilization Management
+</code></pre>
+<p><strong>Check the recall</strong> a few hours later or the next day, in Microsoft 365 Copilot (not the agent):</p>
+<pre class="wrap"><code>What's holding up Miguel Reyes's discharge? I talked to someone about his SNF placement.
+</code></pre>
+<p>Pass: it cites the Maple Grove email (accept tomorrow, pending the MA auth) and the PA-2210-7734 email (PT ambulation distance and assist level). It may not find the agent chat itself, so the narration doesn't promise that.</p>
+
+<h2 id="rehearsal-reset">Rehearsal reset</h2>
+<p>A rehearsal of beats 3 and 4 changes the data:</p>
+<ul>
+<li>DP-1001's <strong>SNF bed acceptance - Maple Grove Rehabilitation</strong> task is Completed, with your note.</li>
+<li>The patient instructions and the prior-auth packet are saved on the plan.</li>
+</ul>
+<p>The recording-day <a href="#re-seed">re-seed</a> resets the data. To rehearse again before then, or after a rehearsal on data already seeded for the recording date, Claude can reset just what a rehearsal changes, on request. These are a few updates, not a mass delete, so they don't need "re-seed it":</p>
+<pre class="wrap"><code>PATCH amc_dischargetasks(&lt;task id&gt;)
+  amc_status      = 417000002   (Waiting on External)
+  amc_completedon = null
+  amc_notes       = "Referrals sent to 3 facilities. Maple Grove has a bed tomorrow, pending insurance authorization. Riverside declined (no bed). Willow Creek still reviewing."
+PATCH amc_dischargeplans(&lt;DP-1001 id&gt;)
+  amc_patientsummary  = null
+  amc_priorauthpacket = null
+</code></pre>
+<p>Keep Barrier Tracker: beat 4 uses it live, and beat 6 shows how it was built (<a href="decisions.html#adr-0016">ADR-0016</a>). Steps for the rehearsal itself: <a href="demo-script.html#barrier-tracker-rehearsal">demo script</a>.</p>
+
+<h2 id="recording-day">Recording day</h2>
+<ol>
+<li><a href="#sign-ins">Sign-ins</a> all point at the demo tenant.</li>
+<li><a href="#re-seed">Re-seed</a> with <code>--anchor</code> set to the recording date (start early; about 10 minutes).</li>
+<li>Run the <a href="#checks">checks</a>: <code>verify_seed.py</code>, <code>expected_kpis.py</code> (note the numbers) and <code>test_foundry.py --apim</code>.</li>
+<li>O'G opens Barrier Tracker, refreshes it, and checks that Miguel's bed acceptance is on the board.</li>
+<li>Then work through <a href="demo-script.html#before-you-record">Before you record</a> in the demo script.</li>
+</ol>
+
+<h2 id="new-tenant">Rebuild in a new tenant</h2>
+<p>How the demo was moved to the demo tenant on 2026-11-01 (<a href="decisions.html#adr-0015">ADR-0015</a>). Use the same order for any future move.</p>
+<ol>
+<li>While still signed in to the old tenant: re-export the solution (<a href="#re-export-the-solution">above</a>) and tag the repo.</li>
+<li>Sign az and pac in to the new tenant and environment, then put the new values in <code>.env</code> (<a href="#new-machine">template below</a>). The APIM and Foundry names must be unique across Azure.</li>
+<li><code>bash infra/provision-foundry.sh</code>, then <code>bash infra/provision-apim.sh</code>.</li>
+<li><code>python scripts/preflight.py</code> (no collisions), then <code>python scripts/create_schema.py</code>. The tables have to exist before the import (<a href="known-issues.html#ki-29">KI-29</a>).</li>
+<li>Import: <code>pac solution pack --zipfile ./solutions/AMCDischargeNavigator.zip --folder ./solutions/AMCDischargeNavigator --packagetype Unmanaged</code>, then <code>pac solution import --path ./solutions/AMCDischargeNavigator.zip --publish-changes</code>. If pac loses the connection, check the import job before retrying; it keeps running on the server.</li>
+<li><code>python scripts/enable-mcp-client.py</code> and <code>python scripts/create_foundry_connection.py</code>.</li>
+<li><code>python scripts/seed_data.py --anchor &lt;date&gt;</code>, then <code>verify_seed.py</code>, <code>expected_kpis.py</code> and <code>test_foundry.py --apim</code>.</li>
+<li>Point <code>code-app/power.config.json</code> at the imported app (<code>appId</code>, <code>environmentId</code>).</li>
+<li>Link <code>agent/</code> to the imported bot (<code>pac copilot clone</code> into a scratch folder, copy its <code>.mcs</code> into <code>agent/</code>, pull). Then set the Foundry tool's <code>connectorId</code> to the new environment's connector internal name, push and publish (<a href="known-issues.html#ki-30">KI-30</a>). Needs PAC 2.13.1 or later.</li>
+<li>O'G: check that "Turn on search indexing to support Dataverse intelligence (Work IQ) in AI and agent experiences" is checked under Dataverse search (the MCP <code>search_data</code> tool needs it; in og-svc it already was). Leave the global search bar option alone if the environment runs Dynamics 365 apps. Then connect Dataverse for the agent's MCP tool, check the agent's model is available, open the Code App once, then check the agent's publish state and channels.</li>
+</ol>
+
+<h2 id="new-machine">New machine</h2>
+<ol>
+<li>Install the <a href="#prerequisites">prerequisites</a>, then:
+<pre><code>gh repo clone pogorman/amc-agent-demo
+cd amc-agent-demo
+pip install --upgrade azure-identity requests PowerPlatform-Dataverse-Client
+cd code-app &amp;&amp; npm install &amp;&amp; cd ..
+</code></pre></li>
+<li>Do the <a href="#sign-ins">sign-ins</a>.</li>
+<li>Recreate <code>.env</code> in the repo root. It's gitignored and contains no secrets:
+<pre><code>DATAVERSE_URL=https://og-svc.crm.dynamics.com
+TENANT_ID=&lt;tenant-id&gt;
+MCP_CLIENT_ID=0c412cc3-0dd6-449b-987f-05b053db9457
+SOLUTION_NAME=AMCDischargeNavigator
+PUBLISHER_PREFIX=amc
+PAC_AUTH_PROFILE=og-svc
+AUTH_MODE=azcli
+POWER_PLATFORM_ENV_ID=&lt;environment-id&gt;
+AZURE_SUBSCRIPTION_ID=&lt;subscription-id&gt;
+AZURE_RESOURCE_GROUP=rg-amc-agent-demo
+AZURE_LOCATION=eastus2
+FOUNDRY_ACCOUNT=cuh-discharge-foundry2
+APIM_NAME=cuh-discharge-apim2
+APIM_PUBLISHER_EMAIL=admin@&lt;tenant&gt;.onmicrosoft.com
+</code></pre></li>
+<li><code>agent/.mcs/</code> isn't in git, so the PAC workspace isn't linked. Run <code>pac copilot clone</code> into a fresh folder, or ask Claude to re-link <code>agent/</code>.</li>
+<li>Smoke test:
+<pre><code>python scripts/preflight.py
+python scripts/verify_seed.py
+python scripts/test_foundry.py --apim
+cd code-app &amp;&amp; npm run build
+</code></pre></li>
+</ol>
+
+<h2 id="public-snapshot">Public snapshot</h2>
+<p>This repo stays private. A public copy is a scrubbed snapshot of its committed HEAD (<a href="decisions.html#adr-0019">ADR-0019</a>).</p>
+<ol>
+<li>Commit what should be in the copy; uncommitted changes aren't included.</li>
+<li><code>python scripts/make_public_snapshot.py</code> (or <code>--out &lt;folder&gt;</code>, outside this repo). The first run makes <code>../amc-agent-demo-public</code> as a new git repo with one commit; later runs add a commit on top. It never pushes.</li>
+<li>If it stops with an edit that didn't match, the source text moved: update that entry in the script and run it again. If it stops on blocklisted text, add a swap or an edit for it. Nothing is committed in either case.</li>
+<li>Look at the files it lists as not text-checked (images and videos) before publishing.</li>
+<li>To publish, after Microsoft's open-source approval: create the public repo and push the copy from <code>../amc-agent-demo-public</code>.</li>
+</ol>
+</main>
+</body>
+</html>

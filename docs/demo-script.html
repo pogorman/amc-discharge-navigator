@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo script · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html" aria-current="page">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="demo-script">Demo script</h1>
+<p class="sub">The run of show: about 20 minutes: an opening on the deck, then 7 beats · updated 2026-11-03: the deck now follows the demo video, so the opening jumps to its slides by name (the title card, the use case, the overview, the cast and the architecture) before beat 1; Barrier Tracker is used live in beat 4, beat 5 asks the agent inside the Command Center, and Barrier Tracker's build plays as your recorded clip in beat 6 (<a href="decisions.html#adr-0016">ADR-0016</a>) · apps and screens are explained in the <a href="user-guide.html">user guide</a></p>
+
+<div class="card"><b>The story in one line:</b> Miguel Reyes is medically ready but still in a bed. After three slides that introduce the cast and how it fits together, the case manager finds out why, the agent drafts the two documents that unblock him, the nurse manager closes a barrier on her huddle board, and leadership sees it all in one view. Then the reveal: she built that board herself, by describing it. One plan, three kinds of builder, one platform.</div>
+
+<h2 id="before-you-record">Before you record</h2>
+<ul class="check">
+  <li><input type="checkbox" checked><span><b>Done 2026-10-31 for a 2026-11-01 recording.</b> If you rehearse first, ask Claude for the <a href="runbook.html#rehearsal-reset">rehearsal reset</a> (a minute, no re-seed). If the recording moves off 2026-11-01, re-seed for the new date. <b>Claude re-seeds the data</b> for the recording date. Say <b>"re-seed it for &lt;date&gt;"</b>; Claude Code's auto mode won't run the reset without it (<a href="known-issues.html#ki-25">KI-25</a>). It takes about 10 minutes, then Claude runs <code>verify_seed.py</code>, <code>expected_kpis.py</code> and <code>test_foundry.py --apim</code>. It clears the saved drafts and reopens Miguel's barriers. Allow 15 minutes before you start (<a href="runbook.html#re-seed">runbook</a>).</span></li>
+  <li><input type="checkbox"><span><b>The Graph recall check passed</b> in the last day or two (<a href="testing.html#smoke-tests">test #6</a>). If it didn't, plan to start at beat 2.</span></li>
+  <li><input type="checkbox"><span><b>Sign-ins:</b> <code>az account show</code> and <code>pac org who</code> show admin@&lt;tenant&gt; (<a href="known-issues.html#ki-08">KI-08</a>). <code>npx --no-install pa auth status</code> only matters if you'll deploy in beat 5.</span></li>
+  <li><input type="checkbox"><span><b>Teams:</b> open a <b>new</b> chat with Discharge Navigator and run one prompt off camera, so the Dataverse sign-in consent is done (<a href="known-issues.html#ki-23">KI-23</a>) and rehearsal chats aren't on screen.</span></li>
+  <li><input type="checkbox"><span><b>Barrier Tracker:</b> open the published app in its own tab off camera, so any sign-in or connection prompt is out of the way, and check that Miguel's <b>SNF bed acceptance - Maple Grove Rehabilitation</b> is on the board. After a re-seed, refresh it so it shows the new rows.</span></li>
+  <li><input type="checkbox"><span><b>Command Center:</b> open it off camera, reload, and check the header says v1.2.1 or later. Ask its chat one question so the first call is out of the way, then reload so the panel starts empty. Don't accept an offer to draft a packet.</span></li>
+  <li><input type="checkbox"><span><b>Your clip</b> of Copilot Studio building Barrier Tracker is ready to play full screen.</span></li>
+  <li><input type="checkbox"><span><b>VS Code</b> is open on <code>code-app/</code> (<code>code code-app</code> from the repo root), the GitHub Copilot chat panel is ready, and <code>git status</code> is clean.</span></li>
+  <li><input type="checkbox"><span><b>Tabs, in order:</b> (1) the <a href="deck.html#title">deck at its title card</a>, full screen (beat 6 comes back to this tab for the <a href="deck.html#prompt">request slide</a>, and beat 7 for the <a href="deck.html#architecture">architecture</a>), (2) M365 Copilot, (3) Teams with the new agent chat, (4) Copilot Studio &gt; Discharge Navigator, Test pane open, (5) Foundry portal &gt; <code>cuh-discharge-foundry2</code> &gt; Deployments, (6) Barrier Tracker, the published app, (7) Discharge Command Center.</span></li>
+  <li><input type="checkbox"><span>Notifications off (Focus / Do not disturb in Windows, Teams and Outlook).</span></li>
+</ul>
+
+<h2 id="expected-numbers">Numbers to expect</h2>
+<p>From <code>expected_kpis.py</code>, for data anchored on <b>2026-11-02</b> (re-seeded that morning for the final recordings; the 2026-11-01 seed gave the same numbers on its day). These numbers hold on 2026-11-02 only. On any other day the Command Center and the agent measure against a different "today," so the numbers drift. The seed is deterministic, so re-seeding for another date gives the same numbers on that date.</p>
+<div class="tablewrap"><table>
+  <tr><th>Command Center</th><th>Before beat 4</th><th>After beat 4</th></tr>
+  <tr><td>Expected discharges today</td><td>12</td><td>12</td></tr>
+  <tr><td>Medically ready, still here</td><td>8 (11 avoidable bed-days)</td><td>8 (11)</td></tr>
+  <tr><td>Open discharge barriers</td><td>44</td><td><b>43</b></td></tr>
+  <tr><td>Prior-auth turnaround</td><td>38 h median (7 approvals)</td><td>38 h</td></tr>
+  <tr><td>High readmission risk</td><td>10</td><td>10</td></tr>
+  <tr><td>Miguel Reyes, DP-1001</td><td>Bed 6E-14 · admitted 5 days ago · medically ready since yesterday · expected discharge today · 1 avoidable day · LACE 14 (High) · <b>3 open barriers</b> · no drafts</td><td><b>2 open barriers</b> · bed acceptance Completed with your note · both drafts saved</td></tr>
+  <tr><td>Plans table, top rows</td><td colspan="2">DP-1008 Aisha Kowalski (3 avoidable days), DP-1020 Minh Wright (2), then Miguel and the other 1-day patients</td></tr>
+</table></div>
+
+<h2 id="guardrails">Narration guardrails</h2>
+<div class="card">
+  <p><b>Don't say</b>, anywhere in the recording:</p>
+  <ul>
+    <li>"Foundry agent." It's a <i>model deployment in Foundry</i>.</li>
+    <li>Anything about RVUs.</li>
+    <li>Don't ask a model what model it is. Point at the <code>Model:</code> line instead.</li>
+  </ul>
+  <p style="margin-bottom:0"><b>Do say:</b> every model output is a <b>draft</b> a clinician reviews and signs. And the preview items: <b>Mistral Large 3</b> in Foundry, <b>Apps in Copilot Studio</b> (beat 6), and the <b>Evaluate</b> tab on a harness agent (only if you show it).</p>
+</div>
+<ul>
+  <li><b>Draft, review, sign.</b> Every model output is a draft a person reviews and signs. Keep it administrative, not clinical, and the medical-device question never comes up.</li>
+  <li><b>No RVU claims.</b> Never say "Copilot raises RVUs." A CMIO will take that apart.</li>
+  <li><b>Never ask a model to name itself on camera.</b> Mistral answered "GPT" in testing (<a href="known-issues.html#ki-09">KI-09</a>). Show the <code>model</code> field instead (<a href="decisions.html#adr-0005">ADR-0005</a>).</li>
+  <li>Say "hands the task to a model we chose in Foundry," <b>not</b> "a Foundry agent." It's a model deployment.</li>
+</ul>
+
+<h2 id="preview-status">Preview and GA status to call out</h2>
+<p>Checked 2026-10-19 against Microsoft Learn, release plans and Microsoft blogs, for US commercial cloud; Apps in Copilot Studio added 2026-11-01. Re-check if you record much later.</p>
+<div class="tablewrap"><table>
+  <tr><th>Item</th><th>Status</th><th>On camera</th></tr>
+  <tr><td>Code Apps</td><td><span class="pill green">GA</span> Feb 5, 2026</td><td>OK to call GA. Behind the scenes: it's an admin toggle per environment, and users need Power Apps Premium.</td></tr>
+  <tr><td>GitHub Copilot harness (agent with no topics)</td><td><span class="pill green">GA</span> Aug 3, 2026</td><td>OK to call GA. Don't show building from natural language on the home page, or Memory; both are still preview.</td></tr>
+  <tr><td>Skills on the harness</td><td><span class="pill grey">No separate notice</span> Shipped with the harness</td><td>Say "skills on the harness," not "skills are GA."</td></tr>
+  <tr><td>Dataverse MCP server (and per-tool on/off)</td><td><span class="pill green">GA</span> Dec 15, 2025</td><td>Say "the GA Dataverse MCP server," not "MCP tooling is GA." Learn still labels the page on adding MCP to a harness agent as preview.</td></tr>
+  <tr><td>Teams and M365 Copilot channels</td><td><span class="pill green">Available</span> No preview label</td><td>OK. Org-wide rollout needs admin approval in the M365 admin center.</td></tr>
+  <tr><td>Evaluate tab on a harness agent</td><td><span class="pill amber">Preview</span> Production-ready preview</td><td><b>Say preview.</b> On the harness it only offers General quality. It's GA on standard agents (<a href="known-issues.html#ki-19">KI-19</a>).</td></tr>
+  <tr><td>Apps in Copilot Studio (the App tile, new experience)</td><td><span class="pill amber">Preview</span></td><td><b>Say preview</b> in beat 6. Barrier Tracker was built with it from the prompt on <a href="deck.html#prompt">the deck's request slide</a> (<a href="decisions.html#adr-0014">ADR-0014</a>).</td></tr>
+  <tr><td>Mistral-Large-3 in Foundry</td><td><span class="pill amber">Preview</span></td><td><b>Say preview.</b> It's a Foundry model <i>sold by Azure</i> (hosted by Microsoft, billed through Azure), in East US 2.</td></tr>
+  <tr><td>gpt-5.5 (2026-04-24) in Foundry</td><td><span class="pill green">GA</span></td><td>OK to call GA. It's in East US 2 and retires 2027-10-26.</td></tr>
+  <tr><td>Claude Sonnet 4.6 orchestrating the agent</td><td><span class="pill green">GA</span> In the US, Mar 2026</td><td>OK. Admin enablement for external models and Anthropic is already done in this tenant. The agent pins <code>Sonnet46</code> explicitly, so it doesn't matter whether that's still the default.</td></tr>
+  <tr><td>Custom connector to APIM</td><td><span class="pill green">GA</span></td><td>OK. Learn doesn't explicitly document custom connectors on the harness, but it works: the 2026-10-19 tests reached both Foundry deployments through it.</td></tr>
+</table></div>
+<p class="callout info">If someone asks "why not the native prompt?": Copilot Studio's built-in option for adding a Foundry model to a prompt doesn't support GPT-5-family models (per Microsoft Learn, Oct 2026), so we use the connector (<a href="decisions.html#adr-0004">ADR-0004</a>).</p>
+
+<h2 id="beats">The beats</h2>
+<p>Each beat lists the screen, what to do, a suggested line to say, what you should see, and what to do if it goes wrong. Times are rough. Start on the deck: the opening introduces every piece in plain words before beat 1 shows any of them.</p>
+
+<div class="card beat" id="opening">
+  <h2>Opening: what you're about to see <span class="pill blue">Set the scene</span></h2>
+  <p class="meta">About 4 min · Tab 1, the deck: the title card, the use case, the overview, the cast, then the architecture (type its name after <code>#</code> in the address bar, or follow the links)</p>
+  <ol>
+    <li><a href="deck.html#title">The title card</a>. Who you are and what this session is.</li>
+    <li><a href="deck.html#use-case">The use case</a>: academic medical centers, discharge planning, and the solution. Your own words are in its notes. Then "Here's the whole idea in 30 seconds."</li>
+    <li><a href="deck.html#overview">The overview</a>, the <a href="hero-video.html">hero video</a> without its end card. It plays by itself when the slide opens (about 25 seconds, silent): the problem, the agent, the drafts, the apps, then the architecture in their tenant under their guardrails. It holds on its last frame; the line is in the slide's notes.</li>
+    <li><a href="deck.html#cast">The cast</a>. One line per row, top to bottom. Each row gives the role first and the product second, so the audience knows what every piece is before they see it work. For the huddle board, just say the nurse manager uses it in a few minutes and you'll show how she made it at the end.</li>
+    <li><a href="deck.html#architecture">How it fits together</a>, near the end of the deck, where the video closes. About a minute, left to right: the people in Microsoft 365, the agent and the one copy of the plan in Power Platform, and the model deployments behind API Management in Azure. Point at the zones; don't read the labels. The slide's notes have a line for each zone.</li>
+  </ol>
+  <div class="say" style="margin-bottom:0"><p>"That's how it fits together. Now let's watch it work on one patient: Miguel Reyes, the patient you met in the video."</p></div>
+</div>
+
+<div class="card beat" id="beat-1">
+  <h2>1. Graph recall <span class="pill blue">Connected intelligence</span></h2>
+  <p class="meta">About 1.5 min · Tab 2, Microsoft 365 Copilot (not the agent)</p>
+  <div class="say"><p>"I'm a case manager on 6 East at Contoso University Health. My patient Miguel Reyes has been medically ready since yesterday and he's still here. I've had a dozen threads about him this week, so I'll start by asking Microsoft 365 Copilot."</p></div>
+  <div class="label">Type</div>
+  <div class="prompt"><span>What's holding up Miguel Reyes's discharge? I talked to someone about his SNF placement.</span><button>Copy</button></div>
+  <div class="label">Expect</div>
+  <p>It cites the <b>Maple Grove</b> email (they can take him tomorrow once the Medicare Advantage auth is approved) and the payer's <b>PA-2210-7734</b> email (they want PT ambulation distance and level of assist).</p>
+  <div class="say"><p>"That's my email and my chats, through Microsoft Graph, with my permissions. Two things are in the way: the payer's prior auth and the SNF bed. Now let's see the actual plan."</p></div>
+  <div class="label">If it goes wrong</div>
+  <p style="margin-bottom:0">If it doesn't find the emails, cut the beat and start at beat 2. Don't promise it will surface the earlier agent chat; sometimes it does, sometimes it doesn't (<a href="known-issues.html#ki-10">KI-10</a>).</p>
+</div>
+
+<div class="card beat" id="beat-2">
+  <h2>2. The agent in Teams <span class="pill blue">Agents in the flow of work</span></h2>
+  <p class="meta">About 2 min · Tab 3, Teams, the new chat with Discharge Navigator</p>
+  <div class="label">Type</div>
+  <div class="prompt"><span>Which of my patients are medically ready but still here?</span><button>Copy</button></div>
+  <p>Expect a short list from your caseload with days waited: <b>Miguel Reyes</b> (DP-1001, 6E-14, Pending Barriers) and <b>Ruth Lindqvist</b> (DP-1003), both ready since yesterday. It may also list James Tran, Wei Lopez and Rosa Rossi, who became ready today.</p>
+  <div class="prompt"><span>What's holding up Miguel Reyes's discharge?</span><button>Copy</button></div>
+  <p>Expect <b>three open barriers</b>, with owners and notes:</p>
+  <ul>
+    <li>SNF prior authorization: waiting on the payer (PA-2210-7734), which asked for updated PT notes</li>
+    <li>SNF bed acceptance at Maple Grove: a bed tomorrow, pending the auth</li>
+    <li>Wheelchair van transport: to be scheduled once the other two clear</li>
+  </ul>
+  <p>It may offer to draft the prior-auth packet. Don't accept it here; the packet is beat 3, and saving it now puts it on the plan early.</p>
+  <div class="say">
+    <p>"Copilot gave me what people said. The agent gives me the plan of record: live Dataverse, through the GA Dataverse MCP server, using <i>my</i> permissions."</p>
+    <p>"And I decided what it's allowed to do. It can read and update a discharge plan. Every tool that could delete something is switched off."</p>
+  </div>
+  <div class="label">If it goes wrong</div>
+  <p style="margin-bottom:0">If Teams asks you to sign in on the first Dataverse call, sign in and carry on; the tool uses your identity (<a href="known-issues.html#ki-23">KI-23</a>). Running one prompt off camera first avoids this.</p>
+</div>
+
+<div class="card beat" id="beat-3">
+  <h2>3. Behind the scenes: model choice <span class="pill blue">Model choice, governance, human in control</span></h2>
+  <p class="meta">About 4 min · Tab 4, Copilot Studio, then tab 5, Foundry</p>
+  <ol>
+    <li>On the agent's Build page, show the instructions, the two tools (Dataverse MCP, Foundry Deployments) and the two skills. The orchestrating model is Claude Sonnet 4.6.</li>
+  </ol>
+  <div class="say"><p>"No topics and no dialog trees. This agent runs on the GitHub Copilot harness in Copilot Studio: instructions, tools and skills. Each skill hands its writing task to a model we chose in Foundry."</p></div>
+  <div class="label">Type in the Test pane</div>
+  <div class="prompt"><span>Draft Miguel Reyes's patient instructions</span><button>Copy</button></div>
+  <p>Expect Spanish at a 6th-grade level under six headings, ending with <code>Model: mistral-large-3 | Draft for nurse review and signature</code>. Open the activity and show the Chat completion call with <b>Model deployment = patient-summary</b>. When it offers to save, say <b>"Yes, save it to his plan."</b></p>
+  <div class="say"><p>"His chart says he prefers Spanish, so it's in Spanish, plain language, with teach-back questions. That came from Mistral Large 3, which is in preview in Foundry, through our API gateway. And it's a draft. His nurse reviews and signs it before he ever sees it."</p></div>
+  <div class="prompt"><span>Build the SNF prior-auth packet for Miguel Reyes</span><button>Copy</button></div>
+  <p>Expect four sections with [field] citations, quoting <b>"150 ft with a rolling walker and standby assist"</b>, ending with <code>Model: gpt-5.5-…</code>. Save this one too: say <b>"Yes, save it to his plan."</b> again, and wait until it says it saved. Beat 5 needs both drafts on his plan.</p>
+  <div class="say"><p>"Remember what the payer asked for: ambulation distance and level of assist. It was already in the chart, in the hospital course. The packet quotes it and says which field it came from. Different job, different model: this one is gpt-5.5. It's a draft for the case manager; nothing goes to the payer until I send it."</p></div>
+  <ol start="2">
+    <li>Switch to tab 5 and show the two deployments, <code>patient-summary</code> and <code>prior-auth</code>.</li>
+    <li>There's no DLP policy in the tenant, so skip the admin-center view unless you've asked Claude to create one.</li>
+  </ol>
+  <div class="say"><p>"Two models picked for two jobs, behind one API gateway. The gateway reaches Foundry with its own managed identity; key-based access is switched off on the model service."</p></div>
+  <div class="label">If it goes wrong</div>
+  <p style="margin-bottom:0">If there's no <code>Model:</code> line, the orchestrator wrote the draft itself. Ask again: "Use the patient-discharge-summary skill." Never ask the model to name itself (<a href="known-issues.html#ki-09">KI-09</a>).</p>
+</div>
+
+<div class="card beat" id="beat-4">
+  <h2>4. The huddle: close a barrier <span class="pill blue">One plan, every app</span></h2>
+  <p class="meta">About 1.5 min · Tab 6, Barrier Tracker (the published app)</p>
+  <div class="say"><p>"Now the 6 East nurse manager. Every morning she runs a huddle on what's keeping patients from going home, and this is her board: Barrier Tracker. Open discharge barriers on her unit, the ones due soonest at the top."</p></div>
+  <p>Don't say how the app was made yet. That's the reveal in beat 6.</p>
+  <div class="say"><p>"Huddle time. Grace from social work says Maple Grove confirmed this morning: they've accepted him, and the bed is his tomorrow once the auth number comes through."</p></div>
+  <ol>
+    <li>Open <b>SNF bed acceptance - Maple Grove Rehabilitation</b> (Miguel Reyes).</li>
+    <li>Add the note:
+      <div class="prompt"><span>Maple Grove accepted; bed held for tomorrow pending the auth number.</span><button>Copy</button></div></li>
+    <li>Mark it <b>completed</b>. The app fills in today's date as the completed date, and the barrier drops off the board. The exact buttons are whatever the builder generated; note them in rehearsal.</li>
+  </ol>
+  <div class="say"><p>"Done, on her board, in the huddle. Now let's see whether the rest of the hospital knows."</p></div>
+  <div class="label">If it goes wrong</div>
+  <p style="margin-bottom:0">If the bed acceptance isn't on the board, a rehearsal left it Completed: stop the take and ask Claude for the <a href="runbook.html#rehearsal-reset">rehearsal reset</a> (about a minute).</p>
+</div>
+
+<div class="card beat" id="beat-5">
+  <h2>5. Pro dev <span class="pill blue">Pro devs in their own tools, enterprise deploy</span></h2>
+  <p class="meta">About 4.5 min · Tab 7, Discharge Command Center, then VS Code</p>
+  <ol>
+    <li>In the Command Center, select <b>Refresh</b>. Walk the tiles: <b>12</b> expected discharges today, <b>8</b> medically ready but still here (11 avoidable bed-days), <b>43</b> open barriers (44 before beat 4), <b>38 h</b> prior-auth turnaround, <b>10</b> high readmission risk.</li>
+    <li>Find Miguel's row: <b>2</b> open barriers, down from 3. Open it. In the drawer:
+      <ul>
+        <li><b>Agent drafts</b> shows the Spanish instructions (Draft badge) and the prior-auth packet.</li>
+        <li><b>Tasks and barriers</b> shows the bed acceptance as Completed, with Grace's note.</li>
+      </ul></li>
+  </ol>
+  <div class="say"><p>"This is the house-wide view for the capacity team. It's a Power Apps Code App, built in React by a pro developer. Same plan: the barrier the nurse manager closed on her board and the drafts the agent saved, both waiting for a clinician's signature."</p></div>
+  <ol start="3">
+    <li>Close the drawer, select <b>Ask Discharge Navigator</b> in the header, and select the starter question (or type it):
+      <div class="prompt"><span>What's still blocking Miguel Reyes?</span><button>Copy</button></div>
+      Expect two barriers, the prior auth and the wheelchair van, after about 30 to 40 seconds. Talk over the wait, or trim it in the edit.</li>
+  </ol>
+  <div class="say"><p>"And the agent is right here in the app, too. It's the same Discharge Navigator as in Teams, working as whoever is signed in. Her board, this dashboard and the agent all work on the same row in Dataverse: she closed it once, and everything sees it. The only thing between Miguel and his SNF bed is the prior auth, and the packet for that is already drafted."</p></div>
+  <p>If it offers to draft the prior-auth packet, don't accept; you drafted and saved it in beat 3. If the drawer showed no drafts, beat 3's saves didn't happen (see the fallbacks).</p>
+  <ol start="4">
+    <li>Switch to VS Code on <code>code-app/</code>. In GitHub Copilot chat, ask:
+      <div class="prompt"><span>Add a filter for High readmission risk to the plans table</span><button>Copy</button></div>
+      Show the diff. Don't deploy it on camera unless you've rehearsed the push.</li>
+  </ol>
+  <div class="say"><p>"Pro devs stay in VS Code with GitHub Copilot. One command, <code>pa app push</code>, deploys it into the same solution and the same managed environment, so it gets the same Dataverse security and the same governance as everything else we've seen. Code Apps are GA."</p></div>
+</div>
+
+<div class="card beat" id="beat-6">
+  <h2>6. The reveal: she built it herself <span class="pill blue">Build for everyone</span></h2>
+  <p class="meta">About 3 min · Tab 1, the deck: go to the <a href="deck.html#prompt">request slide</a>; the next slide plays the build</p>
+  <div class="say"><p>"One more thing. That huddle board the nurse manager used a few minutes ago? Nobody filed a ticket for it, and nobody wrote any code. She built it herself, by describing it."</p></div>
+  <ol>
+    <li>Show the deck's <a href="deck.html#prompt">request slide</a>: her request, as she typed it into Copilot Studio.</li>
+  </ol>
+  <div class="say"><p>"This is all she typed. What the huddle needs to see, the tables the hospital already has, what she wants to change, and that nobody can delete anything. Plain language."</p></div>
+  <ol start="2">
+    <li>Go to the next slide: it plays your recording of Copilot Studio building Barrier Tracker from that prompt, sped up as in the demo video. Talk over it.</li>
+  </ol>
+  <div class="say"><p>"Even if you've never built an app in your life, you can describe one in natural language and Copilot Studio builds it, right here. I recorded this part earlier to save us the couple of minutes it takes. Apps in Copilot Studio is in preview."</p></div>
+  <ol start="3">
+    <li>As the build ends ("Even if you know nothing about building apps, you can describe one."), say:</li>
+  </ol>
+  <div class="say"><p>"The app reaches the hospital's data only through a connection made as her, so it can't see anything she couldn't already see. And it's the same Dataverse rows as everything else: the barrier she closed is a row the agent and the Command Center read too."</p></div>
+  <div class="label">If it goes wrong</div>
+  <p style="margin-bottom:0">The clip was recorded before this take, so its board can show different data, for example Miguel's bed acceptance still open. That's fine; don't point it out. If the build won't play, talk over the request slide instead.</p>
+</div>
+
+<div class="card beat" id="beat-7">
+  <h2>7. Close <span class="pill blue">One platform</span></h2>
+  <p class="meta">About 1 min · Tab 1, the deck's <a href="deck.html#architecture">architecture</a>, the diagram from the opening (past the chapter 7 cards)</p>
+  <div class="say" style="margin-bottom:0">
+    <p>"One discharge plan in Dataverse. A case manager working in Microsoft 365 and Teams. An agent with tools and skills that hands each writing job to the model we chose for it, as drafts. A pro dev in VS Code. And a nurse manager who built her own app just by describing it. All on one platform, under one set of governance."</p>
+  </div>
+</div>
+
+<h2 id="barrier-tracker-rehearsal">Barrier Tracker rehearsal (beats 4 and 6)</h2>
+<p>Barrier Tracker is built once and kept. Beat 4 uses the published app live, and beat 6 plays your recording of the build (<a href="decisions.html#adr-0016">ADR-0016</a>). The point of beat 4 is that her app, the agent and the Code App all work on the same live row: a barrier closed on her board disappears from the agent's answer and from the Command Center (<a href="decisions.html#adr-0012">ADR-0012</a>). Rehearse it once before you record.</p>
+<ol>
+  <li>Open the published Barrier Tracker in its own browser tab (tab 6). Allow any sign-in or connection prompt now, so it doesn't come up on camera. Miguel's <b>SNF bed acceptance - Maple Grove Rehabilitation</b> should be on the board.</li>
+  <li>Test the loop (<a href="testing.html#smoke-tests">test #5</a>):
+    <ul>
+      <li>In Barrier Tracker, open the bed acceptance, add a note and mark it completed. It should drop off the board. Note the exact clicks for beat 4.</li>
+      <li>In the Command Center, select Refresh. Open discharge barriers should go from 44 to <b>43</b>, Miguel's row should show 2 open barriers, and his drawer should show the task as Completed with your note.</li>
+      <li>Still in the Command Center, ask <b>Ask Discharge Navigator</b> <i>"What's still blocking Miguel Reyes?"</i> Expect only the prior auth and the wheelchair van.</li>
+    </ul></li>
+  <li>Play your clip once with slides 6 and 7 up, to time your lines over it.</li>
+</ol>
+<p class="callout"><b>After the rehearsal:</b> ask Claude for the <a href="runbook.html#rehearsal-reset">rehearsal reset</a>. It reopens the bed acceptance and clears DP-1001's drafts. Keep Barrier Tracker. If you ever rebuild it, delete the old app first, plus any "Power Platform for Admins" connection the builder left in og-svc (the notes on <a href="deck.html#prompt">the deck's request slide</a>).</p>
+
+<h2 id="if-something-goes-wrong">If something goes wrong</h2>
+<div class="tablewrap"><table>
+  <tr><th>You see</th><th>What to do</th></tr>
+  <tr><td>Beat 1: M365 Copilot doesn't find the Maple Grove or payer emails</td><td>Cut the beat and start at beat 2. Indexing time isn't published, and the recall may never show the agent chat (<a href="known-issues.html#ki-10">KI-10</a>).</td></tr>
+  <tr><td>Teams asks you to sign in on the first Dataverse call</td><td>Sign in and carry on; the Dataverse tool uses your identity (<a href="known-issues.html#ki-23">KI-23</a>). Run one prompt in that Teams client before you record.</td></tr>
+  <tr><td>A draft has no <code>Model:</code> line</td><td>The orchestrator wrote it itself instead of calling Foundry. Ask again: "Use the patient-discharge-summary skill" (or the prior-auth-packet skill). Never ask the model to name itself (<a href="known-issues.html#ki-09">KI-09</a>).</td></tr>
+  <tr><td>The Command Center drawer says "No draft yet"</td><td>The draft wasn't saved. In the chat, say "Yes, save it to his plan", then select <b>Reload</b> in Agent drafts.</td></tr>
+  <tr><td>Beat 4: Barrier Tracker asks you to sign in or allow a connection</td><td>Allow it and carry on. Open the app once off camera before you record.</td></tr>
+  <tr><td>Beat 4: Miguel's bed acceptance isn't on the board</td><td>A rehearsal left it Completed. Stop the take and ask Claude for the <a href="runbook.html#rehearsal-reset">rehearsal reset</a> (about a minute).</td></tr>
+  <tr><td>Beat 5: the agent in the Command Center still lists the bed acceptance</td><td>Ask: "Check Dataverse again. What's still open for Miguel Reyes?" If it still does, select New chat and ask again.</td></tr>
+  <tr><td>Beat 5: the chat shows an error, or says it's waiting for a sign-in or consent</td><td>Ask the same question in the Teams chat (tab 3) instead. For consent: open the agent in Teams once off camera and allow the Dataverse connection.</td></tr>
+  <tr><td>The Command Center shows old numbers (for example 44 open barriers after beat 4)</td><td>Select <b>Refresh</b> in the header. The drafts section has its own <b>Reload</b>.</td></tr>
+  <tr><td>Beat 6: the build won't play</td><td>Talk over the deck's request slide instead.</td></tr>
+  <tr><td>Scripts fail with "The user is not a member of the organization"</td><td>az is signed in to another tenant, usually from the-agents repo (<a href="known-issues.html#ki-08">KI-08</a>). Run <code>az login --tenant &lt;tenant-id&gt;</code> (<a href="runbook.html#sign-ins">runbook: sign-ins</a>).</td></tr>
+</table></div>
+<p>All known issues are on the <a href="known-issues.html">Known issues</a> page.</p>
+
+<h2 id="after">After rehearsing or recording</h2>
+<ul>
+  <li><b>After a rehearsal:</b> ask Claude for the <a href="runbook.html#rehearsal-reset">rehearsal reset</a> (it reopens the bed-acceptance task and clears the drafts). Keep Barrier Tracker; beat 4 needs it.</li>
+  <li><b>After recording:</b> ask Claude to discard the VS Code change. Claude also checks that nothing of ours landed in another project's solution (<a href="runbook.html#solution-membership">runbook</a>).</li>
+</ul>
+</main>
+<script>
+  document.querySelectorAll('.prompt button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.previousElementSibling.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+      }).catch(function () { btn.textContent = 'Select + Ctrl+C'; });
+    });
+  });
+</script>
+</body>
+</html>

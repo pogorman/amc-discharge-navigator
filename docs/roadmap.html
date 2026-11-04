@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html" aria-current="page">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="roadmap">Roadmap</h1>
+<p>Priority order within each horizon. When an item is done, record it in the <a href="changelog.html">changelog</a> and refresh <a href="status.html">Status</a>.</p>
+
+<h2 id="now">Now: get ready to record</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> <strong>Agent built and published</strong> on the GitHub Copilot harness, with no topics (<a href="decisions.html#adr-0006">ADR-0006</a>). Teams and M365 Copilot channels on; Dataverse MCP tools trimmed to 5. Done 2026-10-19.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Run the 4 test prompts. Done 2026-10-19 in M365 Copilot; all passed (<a href="testing.html#results-log">Testing</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Remove our components from the MedicaidIntegrityLab solution, and switch the preferred solution (<a href="known-issues.html#ki-05">KI-05</a>). Done 2026-10-19.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Code App v1.1.0 with the agent drafts viewer (<a href="decisions.html#adr-0009">ADR-0009</a>). Deployed 2026-10-19.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Seed the Graph recall: the Teams chat and both emails. Done 2026-10-19 (<a href="runbook.html#graph-seeding">Runbook</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Check preview and GA status for the on-camera callouts. Done 2026-10-19 (<a href="demo-script.html#preview-status">Demo script</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Demo script, and canvas beats that close a barrier (<a href="decisions.html#adr-0012">ADR-0012</a>). Done 2026-10-20.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> <strong>Check the Graph recall</strong> in M365 Copilot: it should cite both emails (<a href="known-issues.html#ki-10">KI-10</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Create a Teams team for Barrier Tracker: 6 East Care Team. Done 2026-10-21 (<a href="environments.html#m365">Environments</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> <strong>Build Barrier Tracker with Apps in Copilot Studio once</strong> (replaces the canvas app, <a href="decisions.html#adr-0014">ADR-0014</a>) and rewrite the demo script around it. Done 2026-11-01: built in og-svc from one prompt, used live in beat 4, and O'G's recording of the build plays in beat 6 (<a href="decisions.html#adr-0016">ADR-0016</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> <strong>Deck</strong> to talk over, built up alongside O'G's shorter script (<a href="deck.html">Deck</a>). Started 2026-11-01.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> One full run-through with the <a href="demo-script.html#demo-script">demo script</a>.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Decide on a DLP policy for the governance beat (your call; Claude can script it).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Stage VS Code on <code>code-app/</code> with GitHub Copilot ready.</li>
+</ul>
+
+<h2 id="next">Next: record</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Claude re-seeds for the recording date and runs the checks (<a href="runbook.html#recording-day">Runbook</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Confirm az, pac and pa all point at the demo tenant (<a href="runbook.html#sign-ins">Runbook</a>, <a href="known-issues.html#ki-08">KI-08</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Record the opening and the 7 beats (<a href="demo-script.html#before-you-record">checklist</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> After recording: Claude discards the VS Code change. Keep or delete Barrier Tracker; either way, Claude checks it's only in the AMC Discharge Navigator solution (<a href="demo-script.html#after">Demo script</a>).</li>
+</ul>
+
+<h2 id="later">Later</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> <strong>DLP policy</strong>, if it isn't created before recording: scoped to og-svc, with Dataverse, Office 365 and Foundry Deployments in Business.</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> <strong>Host the agent in the Code App.</strong> Deferred by you on 2026-10-19 (<a href="decisions.html#adr-0010">ADR-0010</a>).</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> <strong>Re-check preview status</strong> if recording slips: Mistral-Large-3 in Foundry and the Evaluate tab on harness agents were preview on 2026-10-19 (<a href="demo-script.html#preview-status">Demo script</a>).</li>
+</ul>
+</main>
+</body>
+</html>

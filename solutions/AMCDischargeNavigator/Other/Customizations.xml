@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26094.166" OrganizationSchemaType="Full" CRMServerServiceabilityVersion="9.2.26094.00166">
+  <Entities />
+  <Roles />
+  <Workflows />
+  <FieldSecurityProfiles />
+  <Templates />
+  <EntityMaps />
+  <EntityRelationships />
+  <OrganizationSettings />
+  <optionsets />
+  <CustomControls />
+  <EntityDataProviders />
+  <CanvasApps />
+  <Connectors />
+  <connectionreferences>
+    <connectionreference connectionreferencelogicalname="amc_DischargeNavigator.cr.shared_commondataserviceforapps.889074b5-0cd8-499d-a619-4ced19d5b57e">
+      <connectionreferencedisplayname>amc_DischargeNavigator.cr.shared_commondataserviceforapps.889074b5-0cd8-499d-a619-4ced19d5b57e</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps</connectorid>
+      <iscustomizable>0</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="amc_DischargeNavigator.cr.shared_new-5ffoundry-20deployments-5fe712c9f154572394.5dff">
+      <connectionreferencedisplayname>Discharge Navigator - Foundry Deployments</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_new-5ffoundry-20deployments-5fa6b26604e9b050ca</connectorid>
+      <customconnectorid>
+        <connectorid>ca262a95-d4c8-f111-aaaf-000d3a367aeb</connectorid>
+      </customconnectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+  </connectionreferences>
+  <Languages>
+    <Language>1033</Language>
+  </Languages>
+</ImportExportXml>

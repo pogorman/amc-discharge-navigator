@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<EntityRelationships xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <EntityRelationship Name="amc_dischargeplan_amc_dischargetask_amc_DischargePlanId" />
+  <EntityRelationship Name="amc_patient_amc_dischargeplan_amc_PatientId" />
+  <EntityRelationship Name="business_unit_amc_dischargeplan" />
+  <EntityRelationship Name="business_unit_amc_dischargetask" />
+  <EntityRelationship Name="business_unit_amc_patient" />
+  <EntityRelationship Name="lk_amc_dischargeplan_createdby" />
+  <EntityRelationship Name="lk_amc_dischargeplan_modifiedby" />
+  <EntityRelationship Name="lk_amc_dischargetask_createdby" />
+  <EntityRelationship Name="lk_amc_dischargetask_modifiedby" />
+  <EntityRelationship Name="lk_amc_patient_createdby" />
+  <EntityRelationship Name="lk_amc_patient_modifiedby" />
+  <EntityRelationship Name="owner_amc_dischargeplan" />
+  <EntityRelationship Name="owner_amc_dischargetask" />
+  <EntityRelationship Name="owner_amc_patient" />
+  <EntityRelationship Name="team_amc_dischargeplan" />
+  <EntityRelationship Name="team_amc_dischargetask" />
+  <EntityRelationship Name="team_amc_patient" />
+  <EntityRelationship Name="user_amc_dischargeplan" />
+  <EntityRelationship Name="user_amc_dischargetask" />
+  <EntityRelationship Name="user_amc_patient" />
+</EntityRelationships>

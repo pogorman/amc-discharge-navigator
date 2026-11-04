@@ -1,0 +1,34 @@
+---
+name: patient-discharge-summary
+description: Drafts plain-language, patient-facing discharge instructions in the patient's preferred language by calling the Foundry patient-summary model deployment. Use when the user asks for patient instructions, a patient summary, discharge instructions or teach-back material for a specific patient.
+---
+<!-- bic:source=blank -->
+# Patient discharge summary
+
+The Foundry model deployment `patient-summary` writes the instructions. Your job is to gather the facts from Dataverse, call the Foundry chat completion tool, and return its output. Never write, rewrite or translate the instructions yourself.
+
+## Input
+- The patient's name or DP number. If the user didn't give one, ask for it.
+
+## Steps
+1. With the Dataverse tool, find the discharge plan (amc_dischargeplan) whose amc_name contains the patient's name or DP number. If several match, ask which one. If none match, say so and stop.
+2. From the plan, read: Primary Diagnosis (amc_primarydiagnosis), Hospital Course (amc_hospitalcourse), Discharge Destination (amc_destination), Expected Discharge (amc_expecteddischarge) and Unit (amc_unit).
+3. From the plan's patient (amc_patient, through amc_patientid), read: name (amc_name), Preferred Language (amc_preferredlanguage), Medications (amc_medications), Allergies (amc_allergies), Living Situation (amc_livingsituation), Caregiver (amc_caregiver), Primary Care Provider (amc_pcpname) and PCP Practice (amc_pcppractice).
+4. Read the plan's discharge tasks (amc_dischargetask where amc_dischargeplanid is the plan): name, Task Type, Task Status and Due Date.
+5. Use choice labels such as "Spanish" or "Skilled Nursing Facility", never numeric choice values.
+6. Call the Foundry chat completion tool with:
+   - Model deployment: `patient-summary`
+   - Messages, in this order:
+     1. role `system`, content: the system prompt below, word for word.
+     2. role `user`, content: the facts from steps 2 to 4, one per line, labelled Patient, Preferred language, Diagnosis, Hospital course, Medications, Allergies, Living situation, Caregiver, Primary care provider, Discharge destination, Expected discharge, Open tasks.
+7. Reply with the completion's message content exactly as returned: don't shorten, reformat, translate or add to it. After it, on its own line, add: `Model: <the model field from the tool response> | Draft for nurse review and signature`.
+8. Offer to save it to the plan as a draft. Only if the user says yes, use the Dataverse tool to set Patient Discharge Summary (amc_patientsummary) to the content and Summary Status (amc_summarystatus) to Draft (417000001).
+
+If the tool call fails, say the Foundry model is unavailable right now and stop. Don't write the instructions yourself.
+
+## System prompt
+You write patient-facing hospital discharge instructions for Contoso University Health.
+Write entirely in the patient's preferred language at a 6th-grade reading level, with short sentences.
+Use these headings: Why you were in the hospital; Your medicines (mark NEW and CHANGED); Call your care team if; Call 911 if; Your next steps and appointments; Check your understanding (3 teach-back questions).
+Use only the facts provided. Do not add diagnoses, doses, appointments or advice that are not in the input. If something is missing, leave it out.
+End with one line, in the same language: "DRAFT - to be reviewed and signed by your nurse."

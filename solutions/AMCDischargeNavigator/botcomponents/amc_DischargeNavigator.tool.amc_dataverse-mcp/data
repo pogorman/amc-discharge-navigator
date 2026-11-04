@@ -1,0 +1,11 @@
+kind: McpTool
+authMode: Invoker
+connectionReference: amc_DischargeNavigator.cr.shared_commondataserviceforapps.889074b5-0cd8-499d-a619-4ced19d5b57e
+connectorId: /providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps
+operationId: InvokeMCP
+allowedTools:
+  - read_query
+  - search
+  - describe
+  - search_data
+  - update_record

@@ -1,0 +1,8 @@
+mcs.metadata:
+  componentName: Foundry chat completion
+  description: "Sends messages to a model deployment in Microsoft Foundry, through Azure API Management, and returns the completion. Deployments: patient-summary (Mistral-Large-3) writes patient-facing discharge instructions; prior-auth (gpt-5.5) writes prior authorization packets. Use it only as the patient-discharge-summary and prior-auth-packet skills direct."
+kind: ConnectorTool
+authMode: Maker
+connectionReference: amc_DischargeNavigator.cr.shared_new-5ffoundry-20deployments-5fe712c9f154572394.5dff
+connectorId: /providers/Microsoft.PowerApps/apis/shared_new-5ffoundry-20deployments-5fa6b26604e9b050ca
+operationId: ChatCompletion

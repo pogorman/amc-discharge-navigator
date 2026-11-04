@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Environments · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html" aria-current="page">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="environments-and-resources">Environments and resources</h1>
+<p>Every environment, resource and ID the demo uses. One tenant, commercial cloud only (<a href="decisions.html#adr-0001">ADR-0001</a>). Since 2026-11-01 the demo runs in the demo tenant (<a href="decisions.html#adr-0015">ADR-0015</a>). The previous tenant is left as-is, and its IDs are at the bottom of this page. The machine-facing copy is the Targets section of <code>CLAUDE.md</code> and the repo's <code>.env</code>; keep them in sync.</p>
+
+<h2 id="power-platform">Power Platform</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th>Resource</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Environment</td><td>og-svc · <code>&lt;environment-id&gt;</code> · Sandbox, Managed Environment. Shared with Dynamics 365 apps and other publishers, so check solution membership after every change (<a href="known-issues.html#ki-05">KI-05</a>).</td></tr>
+    <tr><td>Dataverse</td><td><a href="https://og-svc.crm.dynamics.com">https://og-svc.crm.dynamics.com</a></td></tr>
+    <tr><td>Solution</td><td>AMC Discharge Navigator · <code>AMCDischargeNavigator</code> · <code>5f595ff8-09d6-f111-a05d-000d3a34d653</code> · unpacked in <code>solutions/AMCDischargeNavigator/</code></td></tr>
+    <tr><td>Publisher</td><td><code>AMCAgentDemo</code> · prefix <code>amc</code> · choice values start at 417000000</td></tr>
+    <tr><td>Tables</td><td><code>amc_patient</code>, <code>amc_dischargeplan</code>, <code>amc_dischargetask</code> (<a href="dataverse.html">Dataverse</a>), created by <code>scripts/create_schema.py</code> before the solution import (<a href="known-issues.html#ki-29">KI-29</a>)</td></tr>
+    <tr><td>Agent</td><td>Discharge Navigator · schema <code>amc_DischargeNavigator</code> · bot <code>995d5b75-d488-42ba-8a99-9a5206a02f1e</code> · GitHub Copilot harness · imported 2026-11-01, last published 2026-11-01 16:53 UTC by O'G after the KI-30 fix; works in Teams and Microsoft 365 Copilot (<a href="copilot-studio.html">Copilot Studio</a>)</td></tr>
+    <tr><td>Custom connector</td><td>Foundry Deployments · host <code>cuh-discharge-apim2.azure-api.net</code>, base path <code>/foundry</code> · action Chat completion · source in <code>connector/</code></td></tr>
+    <tr><td>Connector connection</td><td><code>amc-foundry-key</code> · <code>255bce8945454be986f0292773976d5a</code>, created by <code>scripts/create_foundry_connection.py</code> on 2026-11-01. The agent uses it with maker auth.</td></tr>
+    <tr><td>Connection references</td><td><code>amc_DischargeNavigator.cr.shared_commondataserviceforapps.889074b5-0cd8-499d-a619-4ced19d5b57e</code> (Dataverse MCP; the portal created it on 2026-11-01 when O'G set the tool's authentication, replacing the imported one (<a href="known-issues.html#ki-06">KI-06</a>); bound to O'G's Dataverse connection)<br><code>amc_DischargeNavigator.cr.shared_new-5ffoundry-20deployments-5fe712c9f154572394.5dff</code> (Foundry Deployments; bound to <code>amc-foundry-key</code>)<br>Both are in the solution.</td></tr>
+    <tr><td>Code App</td><td>Discharge Command Center · <code>a1951694-de5a-4196-a0b9-8145e3e4645c</code> · v1.2.1 (deployed 2026-11-01 with <code>pac code push</code>; v1.1.0 came in with the solution import). Connector: Microsoft Copilot Studio, through O'G's connection</td></tr>
+    <tr><td>Code App URL</td><td><a href="https://apps.powerapps.com/play/e/&lt;environment-id&gt;/app/a1951694-de5a-4196-a0b9-8145e3e4645c?tenantId=&lt;tenant-id&gt;">https://apps.powerapps.com/play/e/&lt;environment-id&gt;/app/a1951694-…</a></td></tr>
+    <tr><td>Barrier Tracker</td><td>Built once with Apps in Copilot Studio (preview), in og-svc, on its tables (<a href="decisions.html#adr-0014">ADR-0014</a>, <a href="known-issues.html#ki-31">KI-31</a>). Kept: beat 4 uses it live, and beat 6 plays a recording of the build (<a href="decisions.html#adr-0016">ADR-0016</a>)</td></tr>
+    <tr><td>DLP policy</td><td>None in the tenant (optional, O'G decides)</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="azure">Azure</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th>Resource</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Subscription</td><td>&lt;azure-subscription&gt; · <code>&lt;subscription-id&gt;</code></td></tr>
+    <tr><td>Resource group</td><td><code>rg-amc-agent-demo</code> · East US 2</td></tr>
+    <tr><td>Foundry resource</td><td><code>cuh-discharge-foundry2</code> · <code>disableLocalAuth=true</code>, so no keys (<a href="known-issues.html#ki-01">KI-01</a>)</td></tr>
+    <tr><td>Foundry project</td><td><code>amc-discharge-navigator</code></td></tr>
+    <tr><td>Model deployments</td><td><code>patient-summary</code> → Mistral-Large-3 <span class="pill amber">Preview</span> (a Foundry model sold by Azure)<br><code>prior-auth</code> → gpt-5.5 (2026-04-24) <span class="pill green">GA</span>, retires 2027-10-26<br>Details: <a href="foundry.html#deployments">Foundry</a></td></tr>
+    <tr><td>API Management</td><td><code>cuh-discharge-apim2</code> (Consumption) · API <code>/foundry</code> · gateway <code>https://cuh-discharge-apim2.azure-api.net/foundry</code></td></tr>
+    <tr><td>APIM subscription</td><td><code>discharge-navigator</code>, scoped to the <code>/foundry</code> API. Its key is held in the <code>amc-foundry-key</code> connection.</td></tr>
+    <tr><td>Provisioning</td><td><code>infra/provision-foundry.sh</code>, <code>infra/provision-apim.sh</code> and <code>infra/apim_config.py</code> (all idempotent; names and IDs come from <code>.env</code>; <a href="runbook.html#azure-provisioning">Runbook</a>)</td></tr>
+  </tbody>
+</table></div>
+<h3 id="rbac">RBAC</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>Principal</th><th>Role</th><th>Scope</th></tr></thead>
+  <tbody>
+    <tr><td>APIM <code>cuh-discharge-apim2</code> (system-assigned managed identity <code>13fa9bfe-8c28-4418-8162-29cc88625f1e</code>)</td><td>Cognitive Services User</td><td><code>cuh-discharge-foundry2</code></td></tr>
+    <tr><td>admin@&lt;tenant&gt; (for <code>scripts/test_foundry.py</code> without <code>--apim</code>)</td><td>Cognitive Services User</td><td><code>cuh-discharge-foundry2</code></td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="m365">Microsoft 365</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th>Resource</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Teams team</td><td>None in this tenant. 6 East Care Team was made for the canvas app's tab, which ADR-0014 dropped.</td></tr>
+    <tr><td>Graph recall content</td><td>Seeded 2026-11-01: both emails from Carole Poland (CaroleP@&lt;tenant&gt;) to admin@&lt;tenant&gt;, plus O'G's Teams chat with the agent about Miguel. Recall check pending (<a href="runbook.html#graph-seeding">Runbook</a>)</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="identity">Identity</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th></th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Tenant</td><td><code>&lt;tenant-id&gt;</code>, one tenant for Microsoft 365, Power Platform and Azure. The the-agents repo uses the same tenant.</td></tr>
+    <tr><td>Admin account</td><td>admin@&lt;tenant&gt;.onmicrosoft.com, used for az, PAC (profile on og-svc) and the <code>pa</code> CLI</td></tr>
+    <tr><td>Demo persona</td><td>Case manager "Patrick O'Gorman" (the seed data's 6 East case manager; "my patients" in the agent's instructions, <a href="decisions.html#adr-0008">ADR-0008</a>)</td></tr>
+    <tr><td>Graph seeding sender</td><td>A sample tenant user sends the Maple Grove and payer emails (<a href="runbook.html#graph-seeding">Runbook</a>)</td></tr>
+  </tbody>
+</table></div>
+<p class="callout">The az and <code>pa</code> sign-ins are machine-wide. Check <code>az account show</code>, <code>pac org who</code> and <code>npx --no-install pa auth status</code> before running anything here (<a href="known-issues.html#ki-08">KI-08</a>, <a href="runbook.html#sign-ins">Runbook</a>).</p>
+
+<h2 id="where-each-piece-lives">Where each piece lives</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th>Piece</th><th>Runs in</th><th>Source in the repo</th></tr></thead>
+  <tbody>
+    <tr><td>Discharge Navigator agent</td><td>Copilot Studio, og-svc</td><td><code>agent/</code>: <code>settings.mcs.yml</code> (instructions, model, channels), <code>behaviors/</code> (skills), <code>capabilities/tools/</code>. <code>agent/.mcs/</code> is gitignored; linked to og-svc on 2026-11-01.</td></tr>
+    <tr><td>Tables and data</td><td>Dataverse, og-svc</td><td><code>scripts/create_schema.py</code>, <code>scripts/seed_data.py</code></td></tr>
+    <tr><td>Foundry Deployments connector</td><td>og-svc</td><td><code>connector/</code>; its connection: <code>scripts/create_foundry_connection.py</code></td></tr>
+    <tr><td>Discharge Command Center</td><td>Power Apps (Code App), og-svc</td><td><code>code-app/</code></td></tr>
+    <tr><td>Barrier Tracker</td><td>Apps in Copilot Studio (preview), og-svc, built once and kept</td><td>The prompt is on <a href="deck.html#prompt">the deck's request slide</a></td></tr>
+    <tr><td>Solution export</td><td>n/a</td><td><code>solutions/AMCDischargeNavigator/</code></td></tr>
+    <tr><td>API Management</td><td>Azure, <code>rg-amc-agent-demo</code></td><td><code>infra/provision-apim.sh</code>, <code>infra/apim_config.py</code></td></tr>
+    <tr><td>Foundry and its deployments</td><td>Azure, <code>rg-amc-agent-demo</code></td><td><code>infra/provision-foundry.sh</code></td></tr>
+    <tr><td>Checks and smoke tests</td><td>Your machine</td><td><code>scripts/preflight.py</code>, <code>scripts/verify_seed.py</code>, <code>scripts/expected_kpis.py</code>, <code>scripts/test_foundry.py</code>, <code>scripts/check_governance.py</code></td></tr>
+    <tr><td>Graph recall content</td><td>Microsoft 365 (mail and chats)</td><td>Email text on the <a href="runbook.html#graph-seeding">Runbook</a></td></tr>
+    <tr><td>Docs</td><td>n/a</td><td><code>docs/*.html</code> with <code>docs/assets/docs.css</code></td></tr>
+    <tr><td>Repo</td><td>GitHub</td><td><a href="https://github.com/pogorman/amc-agent-demo">pogorman/amc-agent-demo</a> (<code>main</code>)</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="previous-tenant">Previous tenant (left as-is)</h2>
+<p>Everything below still exists and still works, but the demo no longer runs on it. Git tag <code>previous-tenant</code> marks the matching repo state, and <code>.env.previous-tenant</code> (not in git) holds its settings.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Resource</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Tenant and admin</td><td><code>&lt;previous-tenant-id&gt;</code> · admin@&lt;previous-tenant&gt;.onmicrosoft.com</td></tr>
+    <tr><td>Environment</td><td>og-ai-dev · <code>&lt;previous-environment-id&gt;</code> · <a href="https://og-ai-dev.crm.dynamics.com">https://og-ai-dev.crm.dynamics.com</a> · Developer, Managed Environment</td></tr>
+    <tr><td>Solution</td><td><code>cfa98fc2-d2c8-f111-aaaf-000d3a367aeb</code></td></tr>
+    <tr><td>Agent</td><td>bot <code>dba058c7-785f-478d-9576-dc88507a0669</code>, published 2026-10-19 13:03 UTC, Teams and Microsoft 365 Copilot channels on</td></tr>
+    <tr><td>Code App</td><td><code>3f3c4872-a974-471a-89ff-2afb69c9633c</code> · v1.1.0</td></tr>
+    <tr><td>Azure</td><td>Subscription &lt;previous-azure-subscription&gt; · <code>&lt;previous-subscription-id&gt;</code> · <code>rg-amc-agent-demo</code> · <code>cuh-discharge-foundry</code> · <code>cuh-discharge-apim</code></td></tr>
+    <tr><td>Teams team</td><td>6 East Care Team · <code>7c2e1f9f-e773-4622-8a3a-f46154867f6c</code></td></tr>
+    <tr><td>Data</td><td>Seeded for 2026-11-01</td></tr>
+  </tbody>
+</table></div>
+</main>
+</body>
+</html>

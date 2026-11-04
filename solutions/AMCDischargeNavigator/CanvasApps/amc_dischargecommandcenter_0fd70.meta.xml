@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>amc_dischargecommandcenter_0fd70</Name>
+  <AppVersion>2026-11-01T21:20:30Z</AppVersion>
+  <Status>Ready</Status>
+  <CreatedByClientVersion>0.0.0.0</CreatedByClientVersion>
+  <MinClientVersion>0.0.0.0</MinClientVersion>
+  <Tags>{}</Tags>
+  <IsCdsUpgraded>0</IsCdsUpgraded>
+  <GalleryItemId xsi:nil="true"></GalleryItemId>
+  <BackgroundColor>RGBA(255,255,255,1)</BackgroundColor>
+  <DisplayName>Discharge Command Center</DisplayName>
+  <Description>House-wide discharge and barrier view for Contoso University Health (AMC demo)</Description>
+  <CommitMessage xsi:nil="true"></CommitMessage>
+  <Publisher></Publisher>
+  <AuthorizationReferences>[]</AuthorizationReferences>
+  <ConnectionReferences>{"eea44d62-5a7e-4916-b6de-8c6ea9733b23":{"id":"/providers/Microsoft.PowerApps/apis/shared_microsoftcopilotstudio","displayName":"Microsoft Copilot Studio","iconUri":"https://static.powerapps.com/resource/ppcr/releases/v1.0.1830/1.0.1830.5051/microsoftcopilotstudio/icon.png","dataSources":["microsoftcopilotstudio"],"isOnPremiseConnection":false,"bypassConsent":false,"dataSets":{},"apiTier":"Standard"}}</ConnectionReferences>
+  <DatabaseReferences>{"default.cds":{"databaseDetails":{"referenceType":"Environmental","environmentName":"default.cds","overrideValues":{"status":"NotSpecified","environmentVariableName":""}},"dataSources":{"dischargeplans":{"entitySetName":"amc_dischargeplans","logicalName":"amc_dischargeplan"},"dischargetasks":{"entitySetName":"amc_dischargetasks","logicalName":"amc_dischargetask"},"patients":{"entitySetName":"amc_patients","logicalName":"amc_patient"}}}}</DatabaseReferences>
+  <AppComponents>[]</AppComponents>
+  <AppComponentDependencies>[]</AppComponentDependencies>
+  <CanConsumeAppPass>1</CanConsumeAppPass>
+  <CanvasAppType>4</CanvasAppType>
+  <BypassConsent>0</BypassConsent>
+  <AdminControlBypassConsent>0</AdminControlBypassConsent>
+  <EmbeddedApp xsi:nil="true"></EmbeddedApp>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <CdsDependencies>{"cdsdependencies":[{"logicalname":"amc_dischargeplan","componenttype":1},{"logicalname":"amc_dischargetask","componenttype":1},{"logicalname":"amc_patient","componenttype":1}]}</CdsDependencies>
+  <IsCustomizable>1</IsCustomizable>
+  <CodeAppPackageUris>
+    <CodeAppPackageUri>/CanvasApps/amc_dischargecommandcenter_0fd70_CodeAppPackages/index.html_ContentType_text/html</CodeAppPackageUri>
+    <CodeAppPackageUri>/CanvasApps/amc_dischargecommandcenter_0fd70_CodeAppPackages/assets/index-3RZx4lub.js_ContentType_application/javascript</CodeAppPackageUri>
+    <CodeAppPackageUri>/CanvasApps/amc_dischargecommandcenter_0fd70_CodeAppPackages/assets/index-BQHgr3Os.css_ContentType_text/css</CodeAppPackageUri>
+    <CodeAppPackageUri>/CanvasApps/amc_dischargecommandcenter_0fd70_CodeAppPackages/vite.svg_ContentType_image/svg+xml</CodeAppPackageUri>
+  </CodeAppPackageUris>
+</CanvasApp>

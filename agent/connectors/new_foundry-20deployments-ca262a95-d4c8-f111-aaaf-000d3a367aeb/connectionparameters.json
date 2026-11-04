@@ -1,0 +1,15 @@
+﻿{
+  "api_key": {
+    "type": "securestring",
+    "uiDefinition": {
+      "displayName": "APIM subscription key",
+      "description": "Subscription key for cuh-discharge-apim2 (discharge-navigator)",
+      "tooltip": "From APIM \u003E Subscriptions \u003E Discharge Navigator connector",
+      "constraints": {
+        "tabIndex": 2,
+        "clearText": false,
+        "required": "true"
+      }
+    }
+  }
+}

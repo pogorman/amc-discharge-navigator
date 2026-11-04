@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{05ff0d69-fb24-4d4f-9632-b0ae6d3afbc9}</formid>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{9a8d689d-f094-49c5-bad8-e0eebf2a44dd}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{fc8e4dd1-3c04-485c-8c5b-c93be2cf7392}">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{dd17f310-75ad-4522-be32-2686aa7c4a9d}">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="amc_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="amc_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f8ac582c-df3b-4209-905f-6bc04f78026a}">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{9ec046df-e10f-40a3-9a26-4a182243adce}">
+                        <labels>
+                          <label description="MRN" languagecode="1033" />
+                        </labels>
+                        <control id="amc_mrn" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="amc_mrn" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{52879a2d-c7b4-40d7-bdfe-a62de9172888}">
+                        <labels>
+                          <label description="Date of Birth" languagecode="1033" />
+                        </labels>
+                        <control id="amc_dateofbirth" classid="{5b773807-9fb2-42db-97c3-7a91eff8adff}" datafieldname="amc_dateofbirth" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d9643fe1-636c-408f-9a9e-fb6c2dd0a492}">
+                        <labels>
+                          <label description="Preferred Language" languagecode="1033" />
+                        </labels>
+                        <control id="amc_preferredlanguage" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="amc_preferredlanguage" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{3f8cd56b-307b-4499-8657-993645e1aaba}">
+                        <labels>
+                          <label description="Payer" languagecode="1033" />
+                        </labels>
+                        <control id="amc_payer" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="amc_payer" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{a937cab3-8c49-4d2e-a00f-23cacf816186}">
+                        <labels>
+                          <label description="Payer Plan" languagecode="1033" />
+                        </labels>
+                        <control id="amc_payerplan" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="amc_payerplan" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{cec2bbdb-5853-4060-8b46-482d54121270}">
+                        <labels>
+                          <label description="Primary Care Provider" languagecode="1033" />
+                        </labels>
+                        <control id="amc_pcpname" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="amc_pcpname" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{25846962-4764-455c-ad90-9dd1adaf72f1}">
+                        <labels>
+                          <label description="PCP Practice" languagecode="1033" />
+                        </labels>
+                        <control id="amc_pcppractice" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="amc_pcppractice" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{0374d2ce-7433-441a-a4fc-161b3f6fb93b}">
+                        <labels>
+                          <label description="Caregiver" languagecode="1033" />
+                        </labels>
+                        <control id="amc_caregiver" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="amc_caregiver" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{93cf219d-dad9-4c48-aaa4-ed71020f8d38}">
+                        <labels>
+                          <label description="Allergies" languagecode="1033" />
+                        </labels>
+                        <control id="amc_allergies" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="amc_allergies" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{eea13def-b301-43c7-9e4e-498d3156f454}">
+                        <labels>
+                          <label description="Living Situation" languagecode="1033" />
+                        </labels>
+                        <control id="amc_livingsituation" classid="{e0dece4b-6fc8-4a8f-a065-082708572369}" datafieldname="amc_livingsituation" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{9d373733-3b84-4a3f-a67b-070fb9c88bd6}">
+                        <labels>
+                          <label description="Comorbidities" languagecode="1033" />
+                        </labels>
+                        <control id="amc_comorbidities" classid="{e0dece4b-6fc8-4a8f-a065-082708572369}" datafieldname="amc_comorbidities" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{8352bc6a-df3f-4c8b-a302-c92dfab9e43e}">
+                        <labels>
+                          <label description="Medications" languagecode="1033" />
+                        </labels>
+                        <control id="amc_medications" classid="{e0dece4b-6fc8-4a8f-a065-082708572369}" datafieldname="amc_medications" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{7df7231e-e7c7-4d6a-989f-0e512dae8c11}">
+                        <labels>
+                          <label description="ED Visits (Prior 6 Months)" languagecode="1033" />
+                        </labels>
+                        <control id="amc_edvisits6mo" classid="{c6d124ca-7eda-4a60-aea9-7fb8d318b68f}" datafieldname="amc_edvisits6mo" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{0c5482f6-936c-4f31-bc3d-f5be08b7bc4d}">
+                        <labels>
+                          <label description="Charlson Comorbidity Index" languagecode="1033" />
+                        </labels>
+                        <control id="amc_charlsonindex" classid="{c6d124ca-7eda-4a60-aea9-7fb8d318b68f}" datafieldname="amc_charlsonindex" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

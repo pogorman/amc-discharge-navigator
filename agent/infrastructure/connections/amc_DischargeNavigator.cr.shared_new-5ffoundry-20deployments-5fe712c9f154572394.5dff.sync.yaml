@@ -1,0 +1,3 @@
+connectionReferences:
+  - connectionReferenceLogicalName: amc_DischargeNavigator.cr.shared_new-5ffoundry-20deployments-5fe712c9f154572394.5dff
+    connectorId: /providers/Microsoft.PowerApps/apis/shared_new-5ffoundry-20deployments-5fa6b26604e9b050ca

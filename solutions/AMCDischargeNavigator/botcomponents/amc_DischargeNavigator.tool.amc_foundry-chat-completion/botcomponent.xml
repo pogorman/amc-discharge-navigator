@@ -1,0 +1,11 @@
+<botcomponent schemaname="amc_DischargeNavigator.tool.amc_foundry-chat-completion">
+  <componenttype>9</componenttype>
+  <description>Sends messages to a model deployment in Microsoft Foundry, through Azure API Management, and returns the completion. Deployments: patient-summary (Mistral-Large-3) writes patient-facing discharge instructions; prior-auth (gpt-5.5) writes prior authorization packets. Use it only as the patient-discharge-summary and prior-auth-packet skills direct.</description>
+  <iscustomizable>0</iscustomizable>
+  <name>Foundry chat completion</name>
+  <parentbotid>
+    <schemaname>amc_DischargeNavigator</schemaname>
+  </parentbotid>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+</botcomponent>

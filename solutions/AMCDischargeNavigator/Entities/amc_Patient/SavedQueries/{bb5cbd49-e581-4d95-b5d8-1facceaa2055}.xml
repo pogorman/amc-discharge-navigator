@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{bb5cbd49-e581-4d95-b5d8-1facceaa2055}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="amc_name" select="1" icon="1" preview="1">
+        <row name="result" id="amc_patientid">
+          <cell name="amc_name" width="300" />
+          <cell name="createdon" width="125" />
+          <cell name="amc_mrn" width="150" />
+          <cell name="amc_dateofbirth" width="150" />
+          <cell name="amc_preferredlanguage" width="150" />
+          <cell name="amc_payer" width="150" />
+          <cell name="amc_payerplan" width="150" />
+          <cell name="amc_pcpname" width="150" />
+          <cell name="amc_pcppractice" width="150" />
+          <cell name="amc_caregiver" width="150" />
+          <cell name="amc_allergies" width="150" />
+          <cell name="amc_livingsituation" width="150" />
+          <cell name="amc_comorbidities" width="150" />
+          <cell name="amc_medications" width="150" />
+          <cell name="amc_edvisits6mo" width="150" />
+          <cell name="amc_charlsonindex" width="150" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="amc_patient">
+          <attribute name="amc_patientid" />
+          <attribute name="amc_name" />
+          <attribute name="createdon" />
+          <order attribute="amc_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="amc_mrn" />
+          <attribute name="amc_dateofbirth" />
+          <attribute name="amc_preferredlanguage" />
+          <attribute name="amc_payer" />
+          <attribute name="amc_payerplan" />
+          <attribute name="amc_pcpname" />
+          <attribute name="amc_pcppractice" />
+          <attribute name="amc_caregiver" />
+          <attribute name="amc_allergies" />
+          <attribute name="amc_livingsituation" />
+          <attribute name="amc_comorbidities" />
+          <attribute name="amc_medications" />
+          <attribute name="amc_edvisits6mo" />
+          <attribute name="amc_charlsonindex" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Patients" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

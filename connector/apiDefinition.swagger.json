@@ -1,0 +1,167 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Foundry Deployments",
+    "description": "Chat completions against model deployments in Foundry (cuh-discharge-foundry2), via APIM (cuh-discharge-apim2) with managed identity. One operation; the deployment name selects the model.",
+    "version": "1.0"
+  },
+  "host": "cuh-discharge-apim2.azure-api.net",
+  "basePath": "/foundry",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Ocp-Apim-Subscription-Key",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ],
+  "paths": {
+    "/chat/completions": {
+      "post": {
+        "operationId": "ChatCompletion",
+        "summary": "Chat completion",
+        "description": "Sends a list of messages to a Foundry model deployment and returns the model's reply.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "model",
+                "messages"
+              ],
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "title": "Model deployment",
+                  "description": "Foundry deployment name, e.g. patient-summary (Mistral-Large-3) or prior-auth (gpt-5.5).",
+                  "x-ms-summary": "Model deployment"
+                },
+                "messages": {
+                  "type": "array",
+                  "title": "Messages",
+                  "x-ms-summary": "Messages",
+                  "description": "Conversation messages. Use role 'system' for instructions and 'user' for the request.",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "role",
+                      "content"
+                    ],
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "title": "Role",
+                        "x-ms-summary": "Role",
+                        "description": "system, user or assistant"
+                      },
+                      "content": {
+                        "type": "string",
+                        "title": "Content",
+                        "x-ms-summary": "Content"
+                      }
+                    }
+                  }
+                },
+                "max_completion_tokens": {
+                  "type": "integer",
+                  "title": "Max completion tokens",
+                  "x-ms-summary": "Max completion tokens",
+                  "x-ms-visibility": "advanced"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ChatCompletion"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ChatCompletion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-ms-summary": "Id"
+        },
+        "model": {
+          "type": "string",
+          "x-ms-summary": "Model",
+          "description": "The model that produced the reply."
+        },
+        "choices": {
+          "type": "array",
+          "x-ms-summary": "Choices",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "integer",
+                "x-ms-summary": "Index"
+              },
+              "finish_reason": {
+                "type": "string",
+                "x-ms-summary": "Finish reason"
+              },
+              "message": {
+                "type": "object",
+                "x-ms-summary": "Message",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "x-ms-summary": "Role"
+                  },
+                  "content": {
+                    "type": "string",
+                    "x-ms-summary": "Content"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "usage": {
+          "type": "object",
+          "x-ms-summary": "Usage",
+          "properties": {
+            "prompt_tokens": {
+              "type": "integer",
+              "x-ms-summary": "Prompt tokens"
+            },
+            "completion_tokens": {
+              "type": "integer",
+              "x-ms-summary": "Completion tokens"
+            },
+            "total_tokens": {
+              "type": "integer",
+              "x-ms-summary": "Total tokens"
+            }
+          }
+        }
+      }
+    }
+  }
+}

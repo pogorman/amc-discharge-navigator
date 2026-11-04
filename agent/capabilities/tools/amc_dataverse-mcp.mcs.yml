@@ -1,0 +1,14 @@
+mcs.metadata:
+  componentName: Dataverse
+  description: Microsoft Dataverse MCP server. Lists and describes tables, queries rows and updates records in the Patient (amc_patient), Discharge Plan (amc_dischargeplan) and Discharge Task (amc_dischargetask) tables. Use it for every question about patients, discharge plans, tasks and barriers.
+kind: McpTool
+authMode: Invoker
+connectionReference: amc_DischargeNavigator.cr.shared_commondataserviceforapps.889074b5-0cd8-499d-a619-4ced19d5b57e
+connectorId: /providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps
+operationId: InvokeMCP
+allowedTools:
+  - read_query
+  - search
+  - describe
+  - search_data
+  - update_record

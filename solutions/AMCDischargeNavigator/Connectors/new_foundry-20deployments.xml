@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Connector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <connectorid>ca262a95-d4c8-f111-aaaf-000d3a367aeb</connectorid>
+  <description></description>
+  <displayname>Foundry Deployments</displayname>
+  <iconbrandcolor>#0F6CBD</iconbrandcolor>
+  <name>new_foundry-20deployments</name>
+  <connectortype>1</connectortype>
+  <openapidefinition>/Connector/new_foundry-20deployments_openapidefinition.json</openapidefinition>
+  <connectionparameters>/Connector/new_foundry-20deployments_connectionparameters.json</connectionparameters>
+  <policytemplateinstances>/Connector/new_foundry-20deployments_policytemplateinstances.json</policytemplateinstances>
+</Connector>

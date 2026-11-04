@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html" aria-current="page">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="amc-discharge-navigator">AMC Discharge Navigator</h1>
+<p>A recorded "Apps &amp; Agents" demo for academic medical centers. It mirrors the Gov "Permitting Wingman" demo beat for beat, with discharge planning as the use case. A <strong>Copilot Studio agent</strong> in Teams and Microsoft 365 Copilot reads the discharge plan in <strong>Dataverse</strong> and hands each writing job to a <strong>model deployment in Foundry</strong>. A nurse manager's app, built with <strong>Apps in Copilot Studio</strong> (preview), and a pro developer's <strong>Code App</strong> work on the same data. All data is synthetic, for the fictional Contoso University Health.</p>
+
+<pre class="mermaid">flowchart LR
+    cm([Case manager]) --> m365["Microsoft 365 Copilot&lt;br/>and Teams"]
+    m365 --> agent["&lt;b>Discharge Navigator&lt;/b>&lt;br/>Copilot Studio&lt;br/>GitHub Copilot harness"]
+    agent -- "Dataverse MCP server&lt;br/>end-user auth" --> dv[("Dataverse&lt;br/>og-svc")]
+    agent -- "Foundry Deployments connector&lt;br/>maker auth" --> apim["APIM&lt;br/>cuh-discharge-apim2"]
+    apim -- "managed identity" --> fdy["Foundry&lt;br/>patient-summary · Mistral-Large-3&lt;br/>prior-auth · gpt-5.5"]
+    nm([Nurse manager]) --> tracker["&lt;b>Barrier Tracker&lt;/b>&lt;br/>app built in Copilot Studio (preview)"]
+    tracker --> dv
+    cap([Capacity team]) --> code["&lt;b>Discharge Command Center&lt;/b>&lt;br/>Code App"]
+    code --> dv
+</pre>
+
+<div class="card">
+  <h2 id="status">Status</h2>
+  <div class="tablewrap">
+  <table>
+    <tr><th>Component</th><th>State</th></tr>
+    <tr><td>Dataverse tables and synthetic data (og-svc)</td><td><span class="pill green">Live</span></td></tr>
+    <tr><td>Foundry <code>cuh-discharge-foundry2</code>, 2 deployments</td><td><span class="pill green">Live</span> tested direct and through APIM</td></tr>
+    <tr><td>APIM <code>cuh-discharge-apim2</code> → Foundry (managed identity)</td><td><span class="pill green">Live</span> tested end to end</td></tr>
+    <tr><td>Custom connector "Foundry Deployments" and connection <code>amc-foundry-key</code></td><td><span class="pill green">Live</span> tested through Power Platform → APIM → Foundry</td></tr>
+    <tr><td>Agent "Discharge Navigator" (GitHub Copilot harness, no topics)</td><td><span class="pill green">Published</span> in og-svc 2026-11-01; works in Teams and M365 Copilot (barrier question and prior-auth packet tested 2026-11-01)</td></tr>
+    <tr><td>Code App "Discharge Command Center"</td><td><span class="pill green">Live</span> v1.2.1, with the agent drafts viewer and a chat with Discharge Navigator</td></tr>
+    <tr><td>App "Barrier Tracker" (Apps in Copilot Studio, preview)</td><td><span class="pill green">Built</span> in og-svc from one prompt and kept; used live in beat 4, and its build plays as a recorded clip in beat 6 (<a href="decisions.html#adr-0016">ADR-0016</a>)</td></tr>
+    <tr><td>DLP policy</td><td><span class="pill amber">None</span> optional; your call</td></tr>
+  </table>
+  </div>
+  <p style="margin-bottom:0">Latest checks and your next steps: <a href="status.html">Status</a>.</p>
+</div>
+
+<h2 id="docs">Docs</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Page</th><th>For</th><th>What's in it</th></tr>
+  <tr><td><a href="status.html">Status</a></td><td>O'G</td><td>Latest health check, what's done, your next steps</td></tr>
+  <tr><td><a href="eli5.html">ELI5</a></td><td>Anyone</td><td>The idea in plain language</td></tr>
+  <tr><td><a href="user-guide.html">User guide</a></td><td>Presenters</td><td>Opening the apps, and what each screen shows</td></tr>
+  <tr><td><a href="hero-video.html">Hero video</a></td><td>Anyone</td><td>A 28.5-second intro to the solution for any customer, with the MP4 to download</td></tr>
+  <tr><td><a href="demo-script.html">Demo script</a></td><td>Presenters</td><td>The run of show: pre-record checklist, numbers to expect, an opening on the deck and 7 beats with prompts, Barrier Tracker rehearsal, fallbacks</td></tr>
+  <tr><td><a href="deck.html">Deck</a></td><td>O'G</td><td>The slides O'G talks over: the use case, the cast, the architecture, and the nurse manager's Barrier Tracker prompt and data line. Arrow keys to move, N for notes, F for full screen</td></tr>
+  <tr><td><a href="technical-guide.html">Technical guide</a></td><td>Builders</td><td>Architecture diagram, one prompt end to end, components, security and identity</td></tr>
+  <tr><td><a href="runbook.html">Runbook</a></td><td>Operators</td><td>Sign-ins, re-seed, edit and publish the agent, deploy the Code App, recording day, new machine</td></tr>
+  <tr><td><a href="testing.html">Testing</a></td><td>Builders</td><td>Smoke tests, check scripts, testing each layer, results log</td></tr>
+  <tr><td><a href="environments.html">Environments</a></td><td>Everyone</td><td>Every resource and ID</td></tr>
+  <tr><td><a href="known-issues.html">Known issues</a></td><td>Everyone</td><td>Platform limits and workarounds (KI-xx)</td></tr>
+  <tr><td><a href="roadmap.html">Roadmap</a></td><td>Planning</td><td>Now / next / later</td></tr>
+  <tr><td><a href="decisions.html">Decisions</a></td><td>Builders</td><td>Why it's built the way it is (ADRs)</td></tr>
+  <tr><td><a href="copilot-studio.html">Copilot Studio</a></td><td>Builders</td><td>The agent's instructions, tools, skills, system prompts, test prompts and edit log</td></tr>
+  <tr><td><a href="foundry.html">Foundry</a></td><td>Builders</td><td>The two model deployments, APIM, the custom connector, metrics</td></tr>
+  <tr><td><a href="dataverse.html">Dataverse</a></td><td>Builders</td><td>Tables, choices, seed data, the hero patient, KPIs</td></tr>
+  <tr><td><a href="changelog.html">Changelog</a></td><td>Everyone</td><td>What changed, by date and app version</td></tr>
+</table>
+</div>
+
+<h2 id="quick-start">Quick start</h2>
+<pre><code>az login --tenant &lt;tenant-id&gt;
+python scripts/verify_seed.py          # data and hero patient
+python scripts/test_foundry.py --apim  # both models through APIM
+
+cd code-app
+npm run build
+</code></pre>
+<p>App: <a href="https://apps.powerapps.com/play/e/&lt;environment-id&gt;/app/a1951694-de5a-4196-a0b9-8145e3e4645c?tenantId=&lt;tenant-id&gt;" target="_blank" rel="noopener">open Discharge Command Center in Power Apps</a>. Sign-ins and everything else: <a href="runbook.html">Runbook</a>.</p>
+
+<h2 id="repo-layout">Repo layout</h2>
+<pre><code>agent/          Copilot Studio agent workspace (pac copilot pull/push); .mcs/ is gitignored
+code-app/       Power Apps Code App "Discharge Command Center" (React + Fluent UI v9)
+connector/      Power Platform custom connector "Foundry Deployments" (APIM-backed)
+docs/           These pages (HTML)
+infra/          Foundry and APIM provisioning (idempotent)
+scripts/        Dataverse schema, seed data and checks; Foundry smoke test
+solutions/      Unpacked AMCDischargeNavigator solution
+</code></pre>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
+</body>
+</html>

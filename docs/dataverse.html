@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dataverse · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html" aria-current="page">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="dataverse">Dataverse</h1>
+<p>The three tables everything reads and writes, their choices, the synthetic seed data, the hero patient and the Command Center's KPI rules. All data is fictional (Contoso University Health), and it all lives in Dataverse (<a href="decisions.html#adr-0002">ADR-0002</a>).</p>
+
+<h2 id="tables">Tables</h2>
+<p>Solution <code>AMCDischargeNavigator</code>, publisher prefix <code>amc</code>. Created by <code>scripts/create_schema.py</code>, which is idempotent and skips tables that already exist. Display names verified on 2026-10-19: the task table is <strong>Discharge Tasks</strong> in Power Fx, with columns <strong>Discharge Barrier</strong>, <strong>Task Status</strong> and <strong>Discharge Plan</strong>.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Table</th><th>Purpose</th><th>Primary name</th></tr></thead>
+  <tbody>
+    <tr><td><code>amc_patient</code> (Patient)</td><td>Demographics plus chart excerpts. Stands in for the EHR.</td><td>Patient name, e.g. "Miguel Reyes"</td></tr>
+    <tr><td><code>amc_dischargeplan</code> (Discharge Plan)</td><td>One per admission; the coordination record. Lookup <code>amc_PatientId</code> to the patient. Also holds the drafts the agent saves.</td><td>"DP-1001 Miguel Reyes" (DP-1001 onward, in seed order)</td></tr>
+    <tr><td><code>amc_dischargetask</code> (Discharge Task)</td><td>Tasks and barriers. Lookup <code>amc_DischargePlanId</code> to the plan.</td><td>Task title, e.g. "SNF prior authorization"</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="patient-columns">Patient columns</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>Column</th><th>Logical name</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td>MRN</td><td><code>amc_mrn</code></td><td>Text</td></tr>
+    <tr><td>Date of Birth</td><td><code>amc_dateofbirth</code></td><td>Date only</td></tr>
+    <tr><td>Preferred Language</td><td><code>amc_preferredlanguage</code></td><td>Choice</td></tr>
+    <tr><td>Payer · Payer Plan</td><td><code>amc_payer</code> · <code>amc_payerplan</code></td><td>Choice · Text</td></tr>
+    <tr><td>Primary Care Provider · PCP Practice</td><td><code>amc_pcpname</code> · <code>amc_pcppractice</code></td><td>Text</td></tr>
+    <tr><td>Caregiver · Allergies</td><td><code>amc_caregiver</code> · <code>amc_allergies</code></td><td>Text</td></tr>
+    <tr><td>Living Situation · Comorbidities · Medications</td><td><code>amc_livingsituation</code> · <code>amc_comorbidities</code> · <code>amc_medications</code></td><td>Multiline text</td></tr>
+    <tr><td>ED Visits (Prior 6 Months) · Charlson Comorbidity Index</td><td><code>amc_edvisits6mo</code> · <code>amc_charlsonindex</code></td><td>Whole number</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="plan-columns">Discharge Plan columns</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>Column</th><th>Logical name</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td>Patient</td><td><code>amc_patientid</code></td><td>Lookup</td></tr>
+    <tr><td>Unit · Bed</td><td><code>amc_unit</code> · <code>amc_bed</code></td><td>Choice · Text</td></tr>
+    <tr><td>Attending Physician · Case Manager</td><td><code>amc_attending</code> · <code>amc_casemanager</code></td><td>Text</td></tr>
+    <tr><td>Primary Diagnosis</td><td><code>amc_primarydiagnosis</code></td><td>Text</td></tr>
+    <tr><td>Admit Date · Medically Ready On · Expected Discharge · Actual Discharge</td><td><code>amc_admitdate</code> · <code>amc_medicallyreadyon</code> · <code>amc_expecteddischarge</code> · <code>amc_actualdischarge</code></td><td>Date only (<a href="known-issues.html#ki-17">KI-17</a>)</td></tr>
+    <tr><td>Emergent Admission</td><td><code>amc_emergentadmission</code></td><td>Yes/No</td></tr>
+    <tr><td>Plan Status · Discharge Destination</td><td><code>amc_status</code> · <code>amc_destination</code></td><td>Choice</td></tr>
+    <tr><td>LACE Score · Readmission Risk</td><td><code>amc_lacescore</code> · <code>amc_readmissionrisk</code></td><td>Whole number · Choice</td></tr>
+    <tr><td>Hospital Course</td><td><code>amc_hospitalcourse</code></td><td>Multiline text</td></tr>
+    <tr><td>Summary Status</td><td><code>amc_summarystatus</code></td><td>Choice</td></tr>
+    <tr><td>Patient Discharge Summary</td><td><code>amc_patientsummary</code></td><td>Multiline text (8,000). The agent saves the patient instructions here.</td></tr>
+    <tr><td>Prior Auth Packet</td><td><code>amc_priorauthpacket</code></td><td>Multiline text (10,000). The agent saves the prior-auth packet here.</td></tr>
+  </tbody>
+</table></div>
+
+<h3 id="task-columns">Discharge Task columns</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>Column</th><th>Logical name</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td>Discharge Plan</td><td><code>amc_dischargeplanid</code></td><td>Lookup</td></tr>
+    <tr><td>Task Type · Task Status · Owner Role</td><td><code>amc_tasktype</code> · <code>amc_status</code> · <code>amc_ownerrole</code></td><td>Choice</td></tr>
+    <tr><td>Assigned To · External Party</td><td><code>amc_assignedto</code> · <code>amc_externalparty</code></td><td>Text</td></tr>
+    <tr><td>Discharge Barrier</td><td><code>amc_isbarrier</code></td><td>Yes/No</td></tr>
+    <tr><td>Due Date</td><td><code>amc_duedate</code></td><td>Date only</td></tr>
+    <tr><td>Requested On · Completed On</td><td><code>amc_requestedon</code> · <code>amc_completedon</code></td><td>Date and time</td></tr>
+    <tr><td>Notes</td><td><code>amc_notes</code></td><td>Multiline text</td></tr>
+  </tbody>
+</table></div>
+<p class="callout info">The agent reads these through the Dataverse MCP server's <code>read_query</code>, which is SQL. Choice, Yes/No and lookup labels come back in the <code>&lt;column&gt;name</code> columns, e.g. <code>amc_statusname</code> (<a href="known-issues.html#ki-18">KI-18</a>).</p>
+
+<h2 id="choices">Choices</h2>
+<p>All choices are local to their table. Values start at 417000000 and follow the label order below (first label = 417000000, then +1). The Power Fx name of the task status choice is <code>'Task Status (Discharge Tasks)'</code>.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Choice</th><th>Labels, in value order</th></tr></thead>
+  <tbody>
+    <tr><td>Task Status</td><td>Not Started · In Progress · Waiting on External · Blocked · <strong>Completed</strong> (417000004)</td></tr>
+    <tr><td>Plan Status</td><td>Planning · Medically Ready · Pending Barriers · Ready for Discharge · Discharged (417000004)</td></tr>
+    <tr><td>Summary Status</td><td>Not Started · Draft · Signed</td></tr>
+    <tr><td>Readmission Risk</td><td>Low · Moderate · High</td></tr>
+    <tr><td>Unit</td><td>5 West - Medicine · 6 East - Cardiology · 7 North - Orthopedics · 4 South - Oncology</td></tr>
+    <tr><td>Discharge Destination</td><td>Home · Home with Home Health · Skilled Nursing Facility · Inpatient Rehab · Long-Term Acute Care · Hospice</td></tr>
+    <tr><td>Task Type</td><td>Prior Authorization · Post-Acute Placement · Durable Medical Equipment · Home Health Referral · Transportation · Follow-up Appointment · Medication Reconciliation · Meds to Beds · Patient Education · PCP Handoff · Caregiver Coordination</td></tr>
+    <tr><td>Owner Role</td><td>Case Manager · Social Worker · Nurse · Pharmacist · Physician · Physical Therapy</td></tr>
+    <tr><td>Preferred Language</td><td>English · Spanish · Vietnamese · Mandarin · Russian · Arabic</td></tr>
+    <tr><td>Payer</td><td>Medicare · Medicare Advantage · Medicaid · Commercial · Self-pay</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><strong>Barrier:</strong> a task with Discharge Barrier = Yes whose Task Status isn't Completed. In generated cases, these task types are barriers: Prior Authorization, Post-Acute Placement, Durable Medical Equipment, Home Health Referral, Transportation and Medication Reconciliation. The hero patient's tasks set the flag explicitly.</li>
+  <li><strong>LACE:</strong> computed deterministically by the seed script, not by a model. L = length of stay (under 1 day: 0; 1–3: the number of days; 4–6: 4; 7–13: 5; 14+: 7). A = 3 for an emergent admission. C = Charlson index (5 if it's 4 or more). E = ED visits in the prior 6 months, capped at 4. Risk: High at 10+, Moderate at 5–9, Low below 5.</li>
+</ul>
+
+<h2 id="seed-data">Seed data</h2>
+<p><code>scripts/seed_data.py</code> writes everything relative to an anchor date (default: today). It uses a fixed random seed, so the same patients come back on every run; only the dates move with the anchor.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th></th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td>Active plans</td><td>22 across 4 units: 6 East 7 (including Miguel Reyes), 5 West 6, 7 North 5, 4 South 4</td></tr>
+    <tr><td>Discharged in the prior 14 days</td><td>14 (metric history for the prior-auth turnaround)</td></tr>
+    <tr><td>Patients · plans · tasks</td><td>36 · 36 · 209</td></tr>
+    <tr><td>Readmission risk mix</td><td>19 High · 14 Moderate · 3 Low</td></tr>
+  </tbody>
+</table></div>
+<pre><code>python scripts/seed_data.py --reset                      # replace the demo rows, anchored on today
+python scripts/seed_data.py --reset --anchor 2026-10-22  # anchored on a recording date
+python scripts/verify_seed.py                            # data + hero patient checks
+</code></pre>
+<ul>
+  <li>Without <code>--reset</code> the script stops if patients already exist.</li>
+  <li><code>--reset</code> deletes rows one at a time, so it takes about 10 minutes (<a href="known-issues.html#ki-24">KI-24</a>). It also clears the agent's saved drafts and reopens any barrier closed in a rehearsal, because every row is recreated.</li>
+  <li>Re-seed right before recording so "today" in the app matches the data: <a href="runbook.html#re-seed">Runbook</a>.</li>
+</ul>
+
+<h2 id="hero-patient">Hero patient: Miguel Reyes</h2>
+<div class="card">
+  <p><strong>DP-1001 Miguel Reyes</strong> · 6 East - Cardiology, bed 6E-14 · case manager Patrick O'Gorman · attending Dr. Henry Liu</p>
+  <ul>
+    <li>78, Spanish-speaking (MRN CUH-0048213). Admitted via the ED with an HFrEF exacerbation (EF 30%), 5 days before the anchor date. Medically ready since the day before the anchor; expected discharge is the anchor date.</li>
+    <li>Plan Status <strong>Pending Barriers</strong>, destination Skilled Nursing Facility (Maple Grove Rehabilitation). LACE 14, High risk. Summary Status Not Started at seed time.</li>
+    <li>Payer: Medicare Advantage (Contoso Health Plan Medicare Advantage HMO). PCP Dr. Ana Morales. Daughter Lucia Reyes is the caregiver. Allergy: penicillin.</li>
+    <li>Lives alone in a 2nd-floor walk-up (14 stairs, no elevator).</li>
+    <li>The payer asked for PT ambulation distance and assist level. The hospital course already has it: <em>"Ambulating 150 ft with a rolling walker and standby assist."</em> That sets up the prior-auth beat.</li>
+  </ul>
+</div>
+<div class="tablewrap"><table>
+  <thead><tr><th>Task</th><th>Status</th><th>Barrier</th><th>Owner</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>SNF prior authorization</strong></td><td>Waiting on External</td><td><span class="pill red">Open</span></td><td>Case Manager · Patrick O'Gorman · payer Contoso Health Plan Medicare Advantage HMO</td><td>Submitted via payer portal yesterday 10:15 AM (ref PA-2210-7734). Payer requested updated PT notes with ambulation distance and assist level before review.</td></tr>
+    <tr><td><strong>SNF bed acceptance - Maple Grove Rehabilitation</strong></td><td>Waiting on External</td><td><span class="pill red">Open</span></td><td>Social Worker · Grace Kim, LCSW · Maple Grove Rehabilitation (SNF)</td><td>Referrals sent to 3 facilities. Maple Grove has a bed tomorrow, pending insurance authorization. Riverside declined (no bed). Willow Creek still reviewing.</td></tr>
+    <tr><td><strong>Wheelchair van transport to SNF</strong></td><td>Not Started</td><td><span class="pill red">Open</span></td><td>Case Manager · Patrick O'Gorman · Tailspin Medical Transport</td><td>Schedule once SNF accepts and authorization is approved.</td></tr>
+    <tr><td>Discharge medication reconciliation</td><td>Completed</td><td><span class="pill grey">Closed</span></td><td>Pharmacist · Nadia Haddad, PharmD</td><td>Reconciled. NEW: sacubitril/valsartan, spironolactone. CHANGED: furosemide to twice daily. Patient needs a Spanish-language medication list.</td></tr>
+    <tr><td>Teach-back in Spanish: heart failure warning signs and daily weights</td><td>In Progress</td><td>No</td><td>Nurse · Tasha Greene, RN</td><td>Interpreter booked for 2 PM. Patient-facing summary in Spanish not yet drafted.</td></tr>
+    <tr><td>Caregiver call - daughter Lucia Reyes</td><td>Completed</td><td>No</td><td>Social Worker · Grace Kim, LCSW</td><td>Daughter agrees with SNF plan and prefers Maple Grove (close to her work).</td></tr>
+    <tr><td>Cardiology follow-up within 7 days</td><td>Not Started</td><td>No</td><td>Case Manager · Patrick O'Gorman</td><td>Coordinate with SNF so the visit happens even while he is in rehab.</td></tr>
+    <tr><td>PCP handoff to Dr. Ana Morales</td><td>Not Started</td><td>No</td><td>Physician · Dr. Henry Liu · Contoso University Health - Eastside Primary Care</td><td>Send discharge summary and medication changes before the first follow-up.</td></tr>
+  </tbody>
+</table></div>
+<p>He starts with <strong>three open barriers</strong>. In beat 4, the nurse manager closes the Maple Grove bed acceptance in Barrier Tracker on camera, which leaves two (<a href="demo-script.html#beat-4">Demo script</a>, <a href="decisions.html#adr-0012">ADR-0012</a>). To reopen it between rehearsals without a full re-seed: <a href="runbook.html#rehearsal-reset">Runbook</a>.</p>
+
+<h2 id="kpis">Command Center KPIs</h2>
+<p>The rules live in <code>code-app/src/data/metrics.ts</code>. <code>scripts/expected_kpis.py</code> computes the same numbers from Dataverse, so you can check the app against the data. "Today" is the viewer's date, so the numbers drift each day until you re-seed.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Tile or panel</th><th>What it counts</th><th>2026-10-19</th></tr></thead>
+  <tbody>
+    <tr><td>Expected discharges today</td><td>Active plans whose Expected Discharge is today</td><td>About 12</td></tr>
+    <tr><td>Medically ready, still here</td><td>Active plans whose Medically Ready On is before today. The detail line sums the avoidable bed-days (days since medically ready).</td><td>8</td></tr>
+    <tr><td>Open discharge barriers</td><td>Barrier tasks that aren't Completed, on active plans</td><td>44</td></tr>
+    <tr><td>Prior-auth turnaround (median)</td><td>Hours from Requested On to Completed On for Prior Authorization tasks completed in the last 14 days, including recently discharged plans. The detail line is the sample size.</td><td>38 h</td></tr>
+    <tr><td>High readmission risk (LACE ≥ 10)</td><td>Active plans with Readmission Risk High</td><td>10</td></tr>
+    <tr><td>Open barriers by type (panel)</td><td>Open barriers grouped by Task Type</td><td></td></tr>
+    <tr><td>Avoidable bed-days by unit (panel)</td><td>Avoidable days summed per unit. Always shows all units.</td><td></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li>"Active" means Plan Status isn't Discharged. The unit tabs filter the tiles, the barrier panel and the plans table.</li>
+  <li>The plans table is sorted by avoidable days, and its Open barriers column counts each plan's open barriers. Miguel's row shows 3 until beat 4 closes one.</li>
+</ul>
+<pre><code>python scripts/expected_kpis.py   # prints each tile's value and the top of the plans table
+</code></pre>
+</main>
+</body>
+</html>

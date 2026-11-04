@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisions · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html" aria-current="page">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="decisions">Decisions</h1>
+<p>Architecture decision records (ADRs): short records of choices that shape the demo. Add one when a choice is hard to reverse, surprising, or was argued over. Add it as a new section at the bottom of this page, numbered sequentially, with Status, Date, Context, Decision and Consequences. To reverse a decision, mark the old one <strong>Superseded</strong> rather than deleting it. A decision O'G has stated once is final; don't reopen it here without him.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>ADR</th>
+<th>Decision</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#adr-0001">0001</a></td>
+<td>Commercial cloud only</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0002">0002</a></td>
+<td>All data in Dataverse; no mock EHR, no Azure Functions</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0003">0003</a></td>
+<td>Reach Foundry through APIM with a managed identity</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0004">0004</a></td>
+<td>Custom connector "Foundry Deployments" instead of native Foundry model prompts</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0005">0005</a></td>
+<td>One model deployment per task: Mistral-Large-3 for patient instructions, gpt-5.5 for prior auth</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0006">0006</a></td>
+<td>Build the agent on the GitHub Copilot harness, with no topics</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0007">0007</a></td>
+<td>Dataverse MCP server with end-user auth, trimmed; Foundry tool with maker auth</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0008">0008</a></td>
+<td>"My patients" is fixed to Patrick O'Gorman</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0009">0009</a></td>
+<td>The Code App shows the agent's drafts</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0010">0010</a></td>
+<td>Don't host the agent in the Code App for now</td>
+<td>Deferred</td>
+</tr>
+<tr>
+<td><a href="#adr-0011">0011</a></td>
+<td>Graph recall: seed early and check, instead of a fixed wait</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0012">0012</a></td>
+<td>The canvas beats close a barrier on camera</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td><a href="#adr-0013">0013</a></td>
+<td>Docs follow the the-agents pattern</td>
+<td>Accepted</td>
+</tr>
+</tbody>
+</table></div>
+
+<section>
+<h2 id="adr-0001">0001: Commercial cloud only</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-15</li>
+</ul>
+<h3 id="adr-0001-context">Context</h3>
+<p>The first build, on the morning of 2026-10-15, went into a GCC environment and subscription. O'G's role moved from State &amp; Local Government to commercial, and the demo is for commercial customers.</p>
+<h3 id="adr-0001-decision">Decision</h3>
+<p>Start over in commercial: Dataverse <strong>og-ai-dev</strong>, Azure subscription <strong>&lt;previous-azure-subscription&gt;</strong>, tenant <code>&lt;previous-tenant-id&gt;</code>, signed in as admin@&lt;previous-tenant&gt;. Nothing was pulled back from the GCC build.</p>
+<h3 id="adr-0001-consequences">Consequences</h3>
+<ul>
+<li>Everything lives in one Entra tenant (<a href="environments.html">Environments</a>).</li>
+<li>Preview and GA status is checked for US commercial cloud (<a href="demo-script.html#preview-status">preview status</a>).</li>
+<li>The Foundry resource got a new name, <code>cuh-discharge-foundry</code>, because the old custom subdomain was still taken.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0002">0002: All data in Dataverse; no mock EHR, no Azure Functions</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-15</li>
+</ul>
+<h3 id="adr-0002-context">Context</h3>
+<p>This is demoware for a recorded enablement session. A realistic architecture would read the chart from an EHR (FHIR) and might put logic in Azure Functions. Both add moving parts that don't change what the audience sees.</p>
+<h3 id="adr-0002-decision">Decision</h3>
+<p>The easiest working path wins. Three Dataverse tables hold everything: <code>amc_patient</code> stands in for the EHR, <code>amc_dischargeplan</code> is the coordination record, and <code>amc_dischargetask</code> holds tasks and barriers. Synthetic data comes from <code>scripts/seed_data.py</code>, relative to an anchor date. The LACE score is computed in the seed script, not by a model.</p>
+<h3 id="adr-0002-consequences">Consequences</h3>
+<ul>
+<li>The agent, the canvas app and the Code App all work on the same rows, which is what <a href="#adr-0012">ADR-0012</a> shows on camera.</li>
+<li>No custom backend to deploy or secure.</li>
+<li>Dates go stale, so the data is re-seeded on recording day (<a href="runbook.html#re-seed">runbook</a>).</li>
+<li>Details: <a href="dataverse.html">Dataverse</a>.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0003">0003: Reach Foundry through APIM with a managed identity</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-15</li>
+</ul>
+<h3 id="adr-0003-context">Context</h3>
+<p>The tenant enforces <code>disableLocalAuth=true</code> on Cognitive Services, so Foundry has no API keys (<a href="known-issues.html#ki-01">KI-01</a>). A Power Platform custom connector can't easily get an Entra token for Foundry on behalf of the agent.</p>
+<h3 id="adr-0003-decision">Decision</h3>
+<p>Put APIM <code>cuh-discharge-apim</code> (Consumption) in front of Foundry. Its system-assigned identity has <strong>Cognitive Services User</strong> on <code>cuh-discharge-foundry</code>, and API <code>/foundry</code> has a managed-identity authentication policy. Callers use the APIM subscription <code>discharge-navigator</code>.</p>
+<h3 id="adr-0003-consequences">Consequences</h3>
+<ul>
+<li>Entra ID all the way from APIM to Foundry; key-based access stays off on the model service.</li>
+<li>The connector authenticates to APIM with a subscription key, which lives only in the connection (<a href="runbook.html#foundry-connection">runbook</a>).</li>
+<li>One more resource to provision (<code>infra/provision-apim.sh</code>, <code>infra/apim_config.py</code>), and the policy XML can't be handled with <code>az rest</code> on Windows (<a href="known-issues.html#ki-13">KI-13</a>).</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0004">0004: Custom connector "Foundry Deployments" instead of native Foundry model prompts</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-15</li>
+</ul>
+<h3 id="adr-0004-context">Context</h3>
+<p>Copilot Studio's built-in way to add a Foundry model to a prompt doesn't support GPT-5-family models (per Microsoft Learn, Oct 2026), and we want gpt-5.5 for the prior-auth packet (<a href="known-issues.html#ki-02">KI-02</a>). The GitHub Copilot harness adopted later (<a href="#adr-0006">ADR-0006</a>) doesn't change that: its tools are only connectors, MCP servers and workflows, and its model list doesn't include our deployments.</p>
+<h3 id="adr-0004-decision">Decision</h3>
+<p>A Power Platform custom connector, <strong>Foundry Deployments</strong> (<code>connector/</code>), with one Chat completion action that calls APIM's <code>/foundry</code> API with <code>Ocp-Apim-Subscription-Key</code>. The caller passes the deployment name. It's the same pattern as the Gov Permitting Wingman demo.</p>
+<h3 id="adr-0004-consequences">Consequences</h3>
+<ul>
+<li>Any Foundry deployment works, whatever the model family.</li>
+<li>The connector is in the solution; its connection reference needs <code>customconnectorid</code> set (<a href="known-issues.html#ki-15">KI-15</a>).</li>
+<li><code>pac connector create</code> gave the connector the default <code>new_</code> schema prefix. Cosmetic; not visible in the demo.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0005">0005: One model deployment per task</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-15</li>
+</ul>
+<h3 id="adr-0005-context">Context</h3>
+<p>The story is model choice: pick the right model for each job, under one gateway and one set of governance. The two drafting jobs are different: plain-language patient instructions in the patient's language, and a payer-facing prior-auth justification with citations.</p>
+<h3 id="adr-0005-decision">Decision</h3>
+<ul>
+<li><code>patient-summary</code> = <strong>Mistral-Large-3</strong> (preview in Foundry) for the patient instructions.</li>
+<li><code>prior-auth</code> = <strong>gpt-5.5</strong> (GA) for the SNF prior-auth packet.</li>
+</ul>
+<p>Each skill passes its deployment name to the connector and ends the reply with the response's <code>model</code> field. Every output is a draft for clinician review and signature.</p>
+<h3 id="adr-0005-consequences">Consequences</h3>
+<ul>
+<li>Model choice is visible in three places: the deployment name in the tool call, the <code>Model:</code> line, and the Foundry deployments list.</li>
+<li>Never ask a model to name itself on camera; Mistral answered "GPT" in testing (<a href="known-issues.html#ki-09">KI-09</a>).</li>
+<li>Mistral-Large-3 must be called preview on camera (<a href="demo-script.html#preview-status">preview status</a>).</li>
+<li>Details: <a href="foundry.html#deployments">Foundry</a>.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0006">0006: Build the agent on the GitHub Copilot harness, with no topics</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-19</li>
+</ul>
+<h3 id="adr-0006-context">Context</h3>
+<p>The earlier build guide described a standard Copilot Studio agent built in the portal, with topics, like the Gov demo's. The GitHub Copilot harness went GA on Aug 3, 2026: instructions, tools (connectors, MCP servers, workflows) and skills, with model choice. It's the current platform story.</p>
+<h3 id="adr-0006-decision">Decision</h3>
+<p>O'G's call: no topics. Claude built <strong>Discharge Navigator</strong> from the CLI with <code>pac copilot init --authoring-mode cli-copilot</code> (PAC 2.13.1). Schema <code>amc_DischargeNavigator</code>, id <code>dba058c7-785f-478d-9576-dc88507a0669</code>, orchestrating model Claude Sonnet 4.6. The PAC workspace is <code>agent/</code>.</p>
+<h3 id="adr-0006-consequences">Consequences</h3>
+<ul>
+<li>A harness can't be changed after creation.</li>
+<li>The drafting logic lives in two skills, <code>patient-discharge-summary</code> and <code>prior-auth-packet</code>. If the orchestrator ever writes drafts itself, the fallback is harness workflows, which still aren't topics.</li>
+<li>Edits go through <code>pac copilot pull</code>/<code>push</code>, and Claude publishes (<a href="runbook.html#edit-the-agent">runbook</a>).</li>
+<li><code>pac copilot init</code> created its own solution and publisher (<a href="known-issues.html#ki-03">KI-03</a>) and added components to the preferred solution (<a href="known-issues.html#ki-05">KI-05</a>).</li>
+<li>The Evaluate tab is preview on harness agents (<a href="known-issues.html#ki-19">KI-19</a>).</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0007">0007: Dataverse MCP server with end-user auth, trimmed; Foundry tool with maker auth</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-19</li>
+</ul>
+<h3 id="adr-0007-context">Context</h3>
+<p>The harness doesn't offer Dataverse as a knowledge source. The agent needs to read plans, patients and tasks, and save drafts back to the plan. The Foundry connection holds an APIM key that Teams users shouldn't be asked for.</p>
+<h3 id="adr-0007-decision">Decision</h3>
+<ul>
+<li><strong>Dataverse:</strong> the GA Microsoft Dataverse MCP server (<code>InvokeMCP</code>) with <strong>end-user</strong> auth, trimmed to <code>read_query</code>, <code>search</code>, <code>describe</code>, <code>search_data</code> and <code>update_record</code>. The trim is the <code>allowedTools</code> list in <code>agent/capabilities/tools/amc_dataverse-mcp.mcs.yml</code>.</li>
+<li><strong>Foundry:</strong> the Foundry Deployments connector's Chat completion action with <strong>maker</strong> auth, on O'G's <code>amc-foundry-key</code> connection.</li>
+</ul>
+<h3 id="adr-0007-consequences">Consequences</h3>
+<ul>
+<li>Data access runs as the signed-in user, under Dataverse security.</li>
+<li>A governance line for camera: it can read and update a plan, and every tool that could delete something is off.</li>
+<li>Teams users never see a key prompt. If <code>amc-foundry-key</code> breaks, the drafts break for everyone (<a href="runbook.html#foundry-connection">runbook</a>).</li>
+<li>The first MCP call in Teams can prompt a sign-in (<a href="known-issues.html#ki-23">KI-23</a>).</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0008">0008: "My patients" is fixed to Patrick O'Gorman</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-19</li>
+</ul>
+<h3 id="adr-0008-context">Context</h3>
+<p>"Which of my patients…" needs the signed-in user's name to match the plan's case manager. The demo sign-in's display name is "MOD Administrator", so <code>{System.User.DisplayName}</code> would return nobody (<a href="known-issues.html#ki-20">KI-20</a>).</p>
+<h3 id="adr-0008-decision">Decision</h3>
+<p>The instructions in <code>agent/settings.mcs.yml</code> define "my patients" as plans whose case manager is <strong>Patrick O'Gorman</strong>, the hero patient's case manager in the seed data.</p>
+<h3 id="adr-0008-consequences">Consequences</h3>
+<ul>
+<li>Works with the demo tenant's accounts. Any user gets O'G's caseload.</li>
+<li>For a real deployment, map the signed-in user to a case manager record instead.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0009">0009: The Code App shows the agent's drafts</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-19</li>
+</ul>
+<h3 id="adr-0009-context">Context</h3>
+<p>The agent saves the patient instructions and the prior-auth packet to the plan (<code>amc_patientsummary</code>, <code>amc_priorauthpacket</code>), but no app displayed them. O'G asked how to see the packet, and whether the Code App should have a viewer.</p>
+<h3 id="adr-0009-decision">Decision</h3>
+<p>Add an <strong>Agent drafts</strong> section to the plan drawer: the patient instructions (with the Not Started / Draft / Signed badge) and the prior-auth packet, rendered from Markdown, with a Reload button. Shipped as Code App <strong>v1.1.0</strong> after O'G said "ship it".</p>
+<h3 id="adr-0009-consequences">Consequences</h3>
+<ul>
+<li>Beat 6 can show the drafts the agent saved in beat 3, waiting for a clinician's signature.</li>
+<li>New dependency: <code>react-markdown</code> 10.1.0.</li>
+<li>The deploy needed the <code>--solution-id</code> workaround (<a href="known-issues.html#ki-07">KI-07</a>).</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0010">0010: Don't host the agent in the Code App for now</h2>
+<ul>
+<li><strong>Status:</strong> Superseded by <a href="#adr-0017">ADR-0017</a> (2026-11-01): the agent now runs in the Command Center.</li>
+<li><strong>Date:</strong> 2026-10-19</li>
+</ul>
+<h3 id="adr-0010-context">Context</h3>
+<p>O'G asked whether the agent should also run inside the Code App. That would add auth complexity, and the harness agent's web channel from a Code App is unverified.</p>
+<h3 id="adr-0010-decision">Decision</h3>
+<p>O'G: "no don't worry about that for now." The agent stays in Teams, Microsoft 365 Copilot and the Copilot Studio test pane.</p>
+<h3 id="adr-0010-consequences">Consequences</h3>
+<ul>
+<li>The Code App stays a dashboard with one write action (Mark complete) and the drafts viewer.</li>
+<li>Listed under Later on the <a href="roadmap.html#later">roadmap</a>.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0011">0011: Graph recall: seed early and check, instead of a fixed wait</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-19</li>
+</ul>
+<h3 id="adr-0011-context">Context</h3>
+<p>Beat 1 asks Microsoft 365 Copilot about Miguel Reyes and relies on Graph content: an earlier chat with the agent and two emails. The earlier plan said to seed it "3+ days" before recording. O'G asked why a step would take 3 days. Indexing has no published time and is usually hours (<a href="known-issues.html#ki-10">KI-10</a>).</p>
+<h3 id="adr-0011-decision">Decision</h3>
+<p>Seed early (about 10 minutes), then check: run the beat 1 prompt a few hours later or the next day. Once it cites the Maple Grove and PA-2210-7734 emails, it's ready. Seeded 2026-10-19.</p>
+<h3 id="adr-0011-consequences">Consequences</h3>
+<ul>
+<li>No fixed wait before recording.</li>
+<li>The narration doesn't promise that the recall finds the agent chat.</li>
+<li>Procedure and email text: <a href="runbook.html#graph-seeding">runbook</a>.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0012">0012: The canvas beats close a barrier on camera</h2>
+<ul>
+<li><strong>Status:</strong> Superseded in part by <a href="#adr-0014">ADR-0014</a> and <a href="#adr-0016">ADR-0016</a>. Barrier Tracker is no longer a canvas app and isn't in Teams; closing the barrier on camera still stands (beat 4 now).</li>
+<li><strong>Date:</strong> 2026-10-20</li>
+</ul>
+<h3 id="adr-0012-context">Context</h3>
+<p>Beats 4 and 5 mirrored the Gov demo: generate a gallery-and-form canvas app from a table, then add it to Teams. O'G asked what that actually demonstrates. On its own, a generated gallery proves little to this audience and doesn't connect to the story.</p>
+<h3 id="adr-0012-decision">Decision</h3>
+<p>Keep the build, and make it close the loop. In the Barrier Tracker tab in Teams, mark Miguel's <strong>"SNF bed acceptance - Maple Grove Rehabilitation"</strong> barrier Completed with a note. Then ask the agent "What's still blocking Miguel Reyes?" Only the prior auth and the wheelchair van remain. In beat 6, Miguel's row in the Command Center shows 2 open barriers instead of 3.</p>
+<h3 id="adr-0012-consequences">Consequences</h3>
+<ul>
+<li>The beat shows apps and agents on the same live data, with no new build.</li>
+<li>A rehearsal changes the data; the recording-day re-seed resets it, or Claude reopens the task (<a href="runbook.html#rehearsal-reset">runbook</a>).</li>
+<li>O'G needs a Teams team with a 6 East channel.</li>
+<li>Script: <a href="demo-script.html#beat-4">user guide, beats 4–5</a>.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0013">0013: Docs follow the the-agents pattern</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-10-20</li>
+</ul>
+<h3 id="adr-0013-context">Context</h3>
+<p>The docs had grown as six standalone pages (design, next steps, build guide, architecture, build log, demo script), each with its own styles. O'G asked to mimic the way the the-agents repo documents itself.</p>
+<h3 id="adr-0013-decision">Decision</h3>
+<p>One shared stylesheet (<code>docs/assets/docs.css</code>, light theme only), the same top nav on every page, and the the-agents page set: Home, Status, ELI5, User guide, Technical guide, Runbook, Testing, Environments, Known issues, Roadmap, Decisions, Changelog, plus pages for Copilot Studio, Foundry and Dataverse.</p>
+<h3 id="adr-0013-consequences">Consequences</h3>
+<ul>
+<li>New platform limits get a KI row in <a href="known-issues.html">Known issues</a>. Architecture choices get an ADR here. Releases and changes get an entry in the <a href="changelog.html">Changelog</a>. <a href="status.html">Status</a> is refreshed when the status or next steps change.</li>
+<li>New pages are added to the nav on every page.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0014">0014: Barrier Tracker is built with Apps in Copilot Studio, not as a canvas app</h2>
+<ul>
+<li><strong>Status:</strong> Accepted. Superseded in part by <a href="#adr-0016">ADR-0016</a>: the build isn't live on camera; it plays as a recorded clip.</li>
+<li><strong>Date:</strong> 2026-11-01</li>
+</ul>
+<h3 id="adr-0014-context">Context</h3>
+<p>The low-code maker beat had the nurse manager generate a canvas app from the Discharge Task table in make.powerapps.com (<a href="#adr-0012">ADR-0012</a>). Copilot Studio's new experience now has <strong>Apps (preview)</strong>: describe the app in plain language and Copilot Studio builds the data model, logic and screens, then you refine it in chat, publish it and share it. It runs on the GitHub Copilot harness, the same one as the Discharge Navigator agent, and it can connect to Dataverse tables (<a href="https://learn.microsoft.com/microsoft-copilot-studio/apps-experience/apps-overview">Learn: Apps overview</a>).</p>
+<h3 id="adr-0014-decision">Decision</h3>
+<p>O'G's call: no canvas app. The nurse manager builds Barrier Tracker with Apps in Copilot Studio, on the same Dataverse tables. It still closes Miguel's SNF bed-acceptance barrier on camera.</p>
+<h3 id="adr-0014-consequences">Consequences</h3>
+<ul>
+<li>Two builders on camera now work in Copilot Studio (the agent and the app), plus the pro developer in VS Code. The story is still "one plan, three kinds of builder."</li>
+<li>It's preview, so say "preview" on camera. Microsoft is rolling it out gradually, and admins can turn the App tile off. Check that the <strong>App (Preview)</strong> tile shows in og-ai-dev's Copilot Studio with the New experience toggle on. Building, previewing and using the app consumes Copilot Credits.</li>
+<li>The app doesn't live in og-ai-dev or in any of our solutions. Copilot Managed Runtime builds it in the maker's personal developer environment (og-dv here), so the prompt has to name og-ai-dev by its web address (<a href="known-issues.html#ki-27">KI-27</a>). Our solution-membership rule doesn't apply to it. Still unknown: whether it can be added to Teams like the canvas tab.</li>
+<li>Beats 4 and 5 and the canvas rehearsal in the <a href="demo-script.html#beat-4">demo script</a> still describe the canvas app. They need rewriting once O'G settles the new flow; O'G is drafting a shorter script of his own. The <a href="deck.html#4">deck's cast slide</a> already shows the new app.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0015">0015: Move the demo to a new demo tenant; leave the old one as-is</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-11-01</li>
+</ul>
+<h3 id="adr-0015-context">Context</h3>
+<p>In the previous tenant, Apps in Copilot Studio refused Dataverse in every environment (<a href="known-issues.html#ki-27">KI-27</a>), which blocks the Barrier Tracker beat (<a href="#adr-0014">ADR-0014</a>). O'G has a newer demo tenant with its own Azure subscription that can create Sandbox environments, not just Developer ones. There, the same tests passed on 2026-11-01: the builder read the Account table in O'G's personal environment (og-dev) and, across environments, in a sandbox (og-svc).</p>
+<h3 id="adr-0015-decision">Decision</h3>
+<p>Recreate everything in the new tenant: a new Sandbox environment just for this demo, the solution imported from <code>solutions/AMCDischargeNavigator</code>, new Foundry and APIM resources in the new subscription, the agent, the Code App, seed data, the Teams team and the Graph recall seeding. Leave the old tenant exactly as it is. Git tag <code>previous-tenant</code> marks the repo state that matches it.</p>
+<h3 id="adr-0015-consequences">Consequences</h3>
+<ul>
+<li>Importing the solution keeps the schema, the agent and the Code App as they are. It also avoids <code>pac copilot init</code> creating its own solution and publisher (<a href="known-issues.html#ki-03">KI-03</a>).</li>
+<li>The APIM gateway address and the Foundry subdomain have to be unique across all of Azure, and the old ones still exist, so the new resources get new names.</li>
+<li>Values specific to a tenant move into <code>.env</code> and config. The current docs describe the new tenant, and the old one gets a "previous tenant" note.</li>
+<li>Prep in the new tenant: licenses (Microsoft 365 Copilot, Power Apps Premium, Copilot Studio capacity), Anthropic models allowed in Copilot Studio, Code Apps on for the environment, the Dataverse MCP client allowed, Owner on the subscription, and Foundry quota for both models.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0016">0016: Barrier Tracker is used live, and its build plays as a recorded clip at the end</h2>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Date:</strong> 2026-11-01</li>
+</ul>
+<h3 id="adr-0016-context">Context</h3>
+<p>Building Barrier Tracker from deck slide 3's prompt takes a couple of minutes, too long to wait through on camera. O'G recorded the build and wants to end on it: even if you know nothing about building apps, you can describe one in natural language and Copilot Studio builds it. The script also uses the app to close Miguel's bed acceptance, which the agent and the Command Center then show (<a href="#adr-0012">ADR-0012</a>). If the clip only played at the end, nothing would come after it to show that.</p>
+<h3 id="adr-0016-decision">Decision</h3>
+<p>Keep both, as a reveal. Barrier Tracker is built once ahead of time and kept. Beat 4, the huddle: the nurse manager closes the bed acceptance in the published app, and the agent sees it on the next question; how the app was made isn't mentioned yet. Beat 5, the pro dev: the Command Center shows 43 open barriers and Miguel at 2. Beat 6, the reveal: deck slide 3 (her prompt), O'G's recorded clip of the build, then slide 4. Beat 7 closes. The clip's data doesn't have to match the live data.</p>
+<h3 id="adr-0016-consequences">Consequences</h3>
+<ul>
+<li>The demo ends on "anyone can build an app by describing it," and the same-row payoff stays in the middle.</li>
+<li>Barrier Tracker is kept between rehearsals instead of being deleted. The rehearsal reset still reopens the bed acceptance and clears the drafts.</li>
+<li>No Publish to Teams step and no Teams team; the app opens in its own browser tab. Whether it can go in Teams is still unknown.</li>
+<li>The old beat 4 (the canvas build) is gone. The pro dev beat moves from 6 to 5, so the expected numbers are now "before and after beat 4."</li>
+<li>Script: <a href="demo-script.html#beat-4">demo script, beats 4 to 6</a>, and the <a href="demo-script.html#barrier-tracker-rehearsal">Barrier Tracker rehearsal</a>.</li>
+</ul>
+</section>
+<section>
+<h2 id="adr-0017">0017: Chat with the agent inside the Command Center</h2>
+<ul>
+<li><strong>Status:</strong> Accepted. Supersedes <a href="#adr-0010">ADR-0010</a>.</li>
+<li><strong>Date:</strong> 2026-11-01</li>
+</ul>
+<h3 id="adr-0017-context">Context</h3>
+<p>ADR-0010 left the agent out of the Code App because the auth was unclear and a harness agent's web channel from a Code App was unverified. Since then O'G's the-agents app, in the same tenant, has called a GitHub Copilot harness agent from a Code App through the Microsoft Copilot Studio connector. O'G: "let's build the agent into the app now."</p>
+<h3 id="adr-0017-decision">Decision</h3>
+<p>The Command Center gets an <b>Ask Discharge Navigator</b> button that opens a chat panel with the same published agent. It calls the agent through the Microsoft Copilot Studio connector, as the signed-in user, with no extra app registration. Because the agent is on the GitHub Copilot harness, the call uses the connector's agentic-runtime operation (<a href="known-issues.html#ki-32">KI-32</a>). Shipped as Code App v1.2.0.</p>
+<h3 id="adr-0017-consequences">Consequences</h3>
+<ul>
+<li>One agent in Teams, Microsoft 365 Copilot and the Command Center, with the same instructions, tools and skills.</li>
+<li>The operation is undocumented, so Microsoft can change or remove it. If it breaks, the button fails with an error and the rest of the app still works. The supported fallback is a Copilot Studio workflow with an agent node.</li>
+<li>Replies come back whole, with no streaming, and the panel can't show a sign-in or consent card.</li>
+<li>O'G tested v1.2.1 in the published app ("that worked great"). Beat 5 of the demo script now asks the agent there, in place of beat 4's question in Teams (Claude's recommendation, for O'G to confirm).</li>
+</ul>
+
+<h2 id="adr-0018">0018: An AI voice narrates the demo video: Grant, on MAI-Voice-2.1</h2>
+<ul>
+<li><strong>Status:</strong> Accepted.</li>
+<li><strong>Date:</strong> 2026-11-03</li>
+</ul>
+<h3 id="adr-0018-context">Context</h3>
+<p>The demo video was silent, with captions carrying the story. O'G wanted it narrated from start to finish. The options were O'G's own recorded voice (personal, but every edit that moves a chapter means recording it again) or an AI voice the build can regenerate. The video is still being tweaked.</p>
+<h3 id="adr-0018-decision">Decision</h3>
+<p>An AI voice from Azure Speech, generated by <code>build_demo_video.py</code> from the project's own Foundry resource (<code>cuh-discharge-foundry2</code>) with Entra ID sign-in, so no keys and no new Azure resources. O'G heard four samples (Andrew HD, Ava HD, Emma HD and Grant on MAI-Voice-2.1) and picked <b>Grant (<code>en-US-Grant:MAI-Voice-2.1</code>)</b>: "so we can talk about how we used a microsoft model to do it." The narration lives in the script next to the captions, and the build fits the video to it: pauses, cards and held frames get as long as their lines need, and sped-up stretches play slower where a line needs room.</p>
+<h3 id="adr-0018-consequences">Consequences</h3>
+<ul>
+<li>MAI-Voice-2.1 is in public preview, so the video says so: its last line names the voice and the model, and every recording's frame says "narrated by an AI voice (MAI-Voice-2.1, preview)".</li>
+<li>Grant speaks a little slower than the HD voices, and the narration fills most of the video, so it's longer than the silent cut.</li>
+<li>Changing a line regenerates only that line. A build needs az signed in to the demo tenant with Cognitive Services User on the Foundry resource (<a href="known-issues.html#ki-36">KI-36</a>).</li>
+<li>The captions file is now the narration, word for word. The deck plays the video muted, so O'G can still present live, and its notes carry each slide's narration.</li>
+<li>O'G can still swap in their own voice later, chapter by chapter, through the same timing.</li>
+</ul>
+
+<h2 id="adr-0019">0019: A public copy is a scrubbed snapshot, not this repo made public</h2>
+<ul>
+<li><strong>Status:</strong> Accepted.</li>
+<li><strong>Date:</strong> 2026-11-04</li>
+</ul>
+<h3 id="adr-0019-context">Context</h3>
+<p>O'G asked whether the repo could be made public. A scan of the files and the whole history found no secrets: <code>.env</code> was never committed, and no keys, tokens or connection strings appear. But the docs and their history name pre-release material from the kickoff, refer to internal kickoff documents and audiences, and list the tenant, subscription and environment IDs and the admin sign-ins. 27 commits carry a work email address, and the history holds five versions of the demo video (about 250 MB). Editing the files wouldn't help, since every earlier commit keeps the old text.</p>
+<h3 id="adr-0019-decision">Decision</h3>
+<p>This repo stays private and remains the working repo. A public copy is published as a separate repo from a snapshot that <code>scripts/make_public_snapshot.py</code> builds from the committed HEAD into <code>../amc-agent-demo-public</code>: Claude's files and the kickoff screenshots left out, tenant-specific values swapped for <code>&lt;placeholders&gt;</code>, the internal references dropped, and a check that stops before committing if anything on its blocklist is left. The copy is one commit under O'G's GitHub no-reply address, and later runs add a commit on top. The script stays in this repo only.</p>
+<h3 id="adr-0019-consequences">Consequences</h3>
+<ul>
+<li>O'G gets Microsoft's open-source approval before the copy goes public. Claude never pushes it without his go-ahead.</li>
+<li>Every edit in the script must still match; when the source text moves, the script stops and names the edit to update.</li>
+<li>Images and videos aren't text-checked. The request slide's still (<code>docs/demo-video/prompt.png</code>) and the demo video show og-svc's environment ID, and the recordings show the demo tenant.</li>
+<li>The public docs are the build's working notes, so links into the demo environment don't open for readers, and the old git tag they mention isn't in the copy.</li>
+</ul>
+</section>
+</main>
+</body>
+</html>

@@ -1,0 +1,97 @@
+/* Shared styles for the AMC Discharge Navigator docs. Light theme only. Same layout as the-agents docs;
+   the accent is the Code App's Fluent brand blue. */
+:root {
+  --bg: #f6f8fa; --card: #ffffff; --text: #1f2328; --muted: #59636e; --line: #d5dbe3;
+  --accent: #0f6cbd; --accent-text: #ffffff; --link: #0f6cbd; --accent-bg: #e8f1fb;
+  --cs: #0f7f72; --foundry: #8a3fd1;
+  --red: #c93c37; --red-bg: #fdecec; --amber: #9a6700; --amber-bg: #fff8e1;
+  --green: #1b7f3b; --green-bg: #e6f4ea; --grey: #59636e; --grey-bg: #eef1f5;
+  --code-bg: #f1f4f8;
+  --shadow: 0 1px 2px rgba(31, 35, 40, 0.06), 0 1px 3px rgba(31, 35, 40, 0.04);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+       font: 15px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif; }
+a { color: var(--link); }
+
+/* Top bar */
+header.top { background: var(--card); border-bottom: 1px solid var(--line); }
+header.top .inner { max-width: 1000px; margin: 0 auto; padding: 10px 16px;
+                    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+header.top .brand { font-weight: 700; color: var(--text); text-decoration: none; margin-right: 6px; }
+header.top .brand::before { content: ''; display: inline-block; width: 11px; height: 11px; margin-right: 8px; border-radius: 50%;
+                            background: conic-gradient(var(--accent), var(--cs), var(--foundry), var(--accent)); }
+header.top nav { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 13px; }
+header.top nav a { color: var(--muted); text-decoration: none; }
+header.top nav a:hover { color: var(--text); }
+header.top nav a[aria-current="page"] { color: var(--text); font-weight: 600; }
+
+/* Content */
+main { max-width: 1000px; margin: 0 auto; padding: 28px 16px 64px; }
+h1 { font-size: 26px; margin: 0 0 6px; line-height: 1.25; }
+h2 { font-size: 19px; margin: 32px 0 10px; border-top: 1px solid var(--line); padding-top: 20px; }
+h3 { font-size: 16px; margin: 22px 0 8px; }
+h1 + p, .sub { color: var(--muted); }
+p, ul, ol { margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 13px;
+       font-family: "Cascadia Code", Consolas, monospace; overflow-wrap: anywhere; }
+pre { background: var(--code-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+pre code { background: none; padding: 0; overflow-wrap: normal; }
+pre.wrap { white-space: pre-wrap; word-break: break-word; }
+pre.mermaid { background: var(--card); border: 1px solid var(--line); text-align: center; }
+blockquote { margin: 0 0 12px; padding: 4px 0 4px 14px; border-left: 4px solid var(--line); color: var(--muted); }
+hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+
+/* Tables */
+.tablewrap { overflow-x: auto; margin: 0 0 14px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--card);
+        border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-top: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; border-top: 0; }
+
+/* Task lists */
+ul.contains-task-list { list-style: none; padding-left: 4px; }
+ul.contains-task-list ul { list-style: disc; }
+.task-list-item input { margin-right: 6px; }
+
+/* Status pills and cards */
+.pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.red { color: var(--red); background: var(--red-bg); }
+.amber { color: var(--amber); background: var(--amber-bg); }
+.green { color: var(--green); background: var(--green-bg); }
+.grey { color: var(--grey); background: var(--grey-bg); }
+.blue { color: var(--accent); background: var(--accent-bg); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 18px; box-shadow: var(--shadow); }
+.card h2 { border-top: 0; padding-top: 0; margin-top: 0; }
+.btn { display: inline-block; margin-top: 8px; padding: 8px 14px; border-radius: 6px;
+       background: var(--accent); color: var(--accent-text); text-decoration: none; font-weight: 600; }
+.btn:hover { filter: brightness(1.08); }
+.opt { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+.opt b { display: block; }
+.muted { color: var(--muted); }
+.callout { border-left: 4px solid var(--red); padding: 4px 0 4px 14px; margin-top: 8px; }
+.callout.info { border-left-color: var(--accent); }
+.nowrap { white-space: nowrap; }
+
+/* Demo script (user guide) */
+.beat h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.meta { color: var(--muted); font-size: 13px; margin: -4px 0 8px; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 4px; font-weight: 600; }
+.say { background: var(--green-bg); border-left: 4px solid var(--green); border-radius: 6px; padding: 8px 14px; margin: 6px 0 12px; }
+.say p { margin: 4px 0; }
+.prompt { display: flex; gap: 8px; align-items: flex-start; background: var(--code-bg); border: 1px solid var(--line);
+          border-radius: 8px; padding: 8px 10px; margin: 6px 0 10px; }
+.prompt span { flex: 1; font: 14px/1.5 "Cascadia Code", Consolas, monospace; word-break: break-word; }
+.prompt button, .copy { font: 12px "Segoe UI", sans-serif; padding: 2px 10px; border: 1px solid var(--line); border-radius: 6px;
+                        background: var(--card); color: var(--text); cursor: pointer; }
+.prompt button:hover, .copy:hover { border-color: var(--accent); color: var(--accent); }
+ul.check { list-style: none; padding-left: 0; }
+ul.check li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+ul.check input { width: 16px; height: 16px; margin-top: 4px; accent-color: var(--green); }
+
+/* Architecture diagram (technical guide) */
+.diagram { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; box-shadow: var(--shadow);
+           overflow-x: auto; margin: 0 0 14px; }
+.diagram svg { display: block; min-width: 900px; width: 100%; height: auto; }

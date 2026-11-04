@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ELI5 · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html" aria-current="page">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="explained-simply">AMC Discharge Navigator, explained simply</h1>
+<p>What the demo shows, without the product names getting in the way. For how it's built, see the <a href="technical-guide.html">technical guide</a>.</p>
+
+<h2 id="the-one-sentence-version">The one-sentence version</h2>
+<p>A patient is well enough to go home but is still in a hospital bed. An assistant tells the case manager why, writes the two documents that will get him out, and the whole care team sees the same up-to-date plan, whether they're in Teams, a simple app or a leadership dashboard.</p>
+
+<h2 id="the-cast">The cast</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr><th>Character</th><th>In real life</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td>🧑‍💼 <strong>Case manager</strong></td><td>A person using Microsoft 365 Copilot and Teams</td><td>Asks questions where they already work: email, chat, Teams.</td></tr>
+<tr><td>🧭 <strong>The assistant</strong></td><td>The Discharge Navigator agent in Copilot Studio</td><td>Looks up the plan, explains what's blocking a discharge, and asks the right writer to draft documents. It can read and update a plan; it can't delete anything.</td></tr>
+<tr><td>✍️ <strong>Two writers</strong></td><td>Two model deployments in Foundry</td><td>One writes plain-language patient instructions in the patient's own language. The other writes the insurance (prior-auth) packet with a citation for every claim.</td></tr>
+<tr><td>🚪 <strong>The gatekeeper</strong></td><td>Azure API Management (APIM)</td><td>The only door to the writers. It signs in to Foundry with its own identity, so there are no keys on the model service.</td></tr>
+<tr><td>📋 <strong>The record</strong></td><td>Dataverse</td><td>The one copy of the discharge plan: patient, plan, tasks and barriers. Everyone reads and writes the same rows.</td></tr>
+<tr><td>📌 <strong>The huddle board</strong></td><td>Barrier Tracker, an app built in Copilot Studio (preview)</td><td>A list of open barriers. A nurse manager describes it in plain language and Copilot Studio builds it on the same data, without code.</td></tr>
+<tr><td>📊 <strong>The capacity dashboard</strong></td><td>Discharge Command Center, a Code App</td><td>The house-wide view for leadership: discharges today, patients waiting, open barriers, prior-auth turnaround, and each patient's drafts. A pro developer built it in React.</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="what-happens-when-you-ask-something">What happens when you ask something</h2>
+<ol>
+<li>The case manager asks the assistant in Teams: <strong>"What's holding up Miguel Reyes's discharge?"</strong>
+→ The assistant reads Miguel's plan from the record, using the case manager's own permissions.
+→ It answers with three open barriers: the insurer's approval for a skilled nursing facility (SNF), the SNF accepting him, and the wheelchair van. Each comes with who owns it and the latest notes.</li>
+<li>The case manager asks: <strong>"Build the SNF prior-auth packet for Miguel Reyes."</strong>
+→ The assistant collects the facts from the chart: the hospital stay, the tasks and the insurer's request.
+→ It sends them through the gatekeeper to the packet writer (gpt-5.5).
+→ The packet comes back marked <strong>DRAFT</strong>, with the model's name on the last line. It quotes the walking distance the insurer asked for ("150 ft with a rolling walker and standby assist"), which was already in the chart.
+→ If the case manager says so, the draft is saved to the plan, and it appears in the dashboard for review.</li>
+<li>In the morning huddle, the nurse manager marks the SNF acceptance done in the huddle board.
+→ It's the same row in the same record, so the next time anyone asks the assistant, that barrier is gone. The dashboard shows one fewer open barrier.</li>
+</ol>
+
+<h2 id="why-two-models">Why two writers</h2>
+<p>They do different jobs, so each gets the model that suits it:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr><th>Job</th><th>Writer</th><th>What good looks like</th></tr>
+</thead>
+<tbody>
+<tr><td>Patient instructions</td><td><code>patient-summary</code> (Mistral Large 3, preview in Foundry)</td><td>Short sentences at a 6th-grade reading level, in the patient's language (Spanish for Miguel), with teach-back questions</td></tr>
+<tr><td>Prior-auth packet</td><td><code>prior-auth</code> (gpt-5.5)</td><td>Structured sections, a chart citation for every statement, nothing invented, and a list of what the insurer still needs</td></tr>
+</tbody>
+</table></div>
+<p>A third model, Claude Sonnet 4.6, runs the assistant itself: it decides what to look up and which writer to call. You can always see which writer produced a draft, from the <code>Model:</code> line at the end. Nobody has to ask the model who it is.</p>
+
+<h2 id="why-this-matters">Why this matters</h2>
+<ul>
+<li><strong>One plan, three kinds of builder, one platform.</strong> A nurse manager with no code, an agent builder in Copilot Studio, and a pro developer in VS Code all work on the same governed data.</li>
+<li><strong>People stay in charge.</strong> Every model output is a draft. A nurse reviews and signs the patient instructions; the case manager reviews the packet before anything goes to the insurer.</li>
+<li><strong>Time back where it hurts.</strong> The facts are already in the chart. The assistant finds them and drafts the paperwork, so the team spends its time on the patient instead of on hunting and retyping.</li>
+</ul>
+</main>
+</body>
+</html>

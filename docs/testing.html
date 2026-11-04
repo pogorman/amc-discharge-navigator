@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html" aria-current="page">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="testing">Testing</h1>
+<p>What to check before a rehearsal or recording, and after any change to the agent, the Foundry deployments, the connector, the data or the Code App. Results go in the log at the bottom.</p>
+
+<h2 id="smoke-tests">Smoke test matrix</h2>
+<p>Run #1–4 in Teams or Microsoft 365 Copilot (the published agent). Use the Copilot Studio Test pane when you want to see the tool calls. All expectations assume freshly seeded data (<a href="runbook.html#re-seed">runbook: re-seed</a>).</p>
+<div class="tablewrap"><table>
+  <tr><th>#</th><th>Where</th><th>Prompt or check</th><th>Pass when</th></tr>
+  <tr><td>1</td><td>Agent</td><td><code>Which of my patients are medically ready but still here?</code></td><td>A list with days waited. Miguel Reyes (DP-1001, 6 East, Pending Barriers) is on it.</td></tr>
+  <tr><td>2</td><td>Agent</td><td><code>What's holding up Miguel Reyes's discharge?</code></td><td>Three open barriers, with assignee, external party and notes: SNF prior authorization (PA-2210-7734, payer wants updated PT notes), SNF bed acceptance at Maple Grove, wheelchair van transport.</td></tr>
+  <tr><td>3</td><td>Agent</td><td><code>Draft Miguel Reyes's patient instructions</code></td><td>A Dataverse read, then a Foundry call. Text in <b>Spanish</b> (his preferred language) under the six headings. The last line reads <code>Model: mistral-large-3 | Draft for nurse review and signature</code>. If you save it, the Command Center drawer shows it under Agent drafts.</td></tr>
+  <tr><td>4</td><td>Agent</td><td><code>Build the SNF prior-auth packet for Miguel Reyes</code></td><td>Four sections with [field] citations. It quotes <b>"150 ft with a rolling walker and standby assist"</b>. The last line reads <code>Model: gpt-5.5-… | Draft for case manager review</code>.</td></tr>
+  <tr><td>5</td><td>Barrier Tracker, agent, Command Center</td><td>Mark <b>SNF bed acceptance - Maple Grove Rehabilitation</b> Completed with a note in the published Barrier Tracker. Then ask the agent <code>What's still blocking Miguel Reyes?</code> Then select Refresh in the Command Center.</td><td>The task drops off the board. The agent lists only the prior auth and the wheelchair van. Miguel's row shows 2 open barriers, and his drawer shows the task as Completed with the note. Reset afterwards (<a href="runbook.html#rehearsal-reset">runbook</a>).</td></tr>
+  <tr><td>6</td><td>Microsoft 365 Copilot (not the agent)</td><td><code>What's holding up Miguel Reyes's discharge? I talked to someone about his SNF placement.</code></td><td>It cites the Maple Grove email (accept tomorrow, pending the Medicare Advantage auth) and the PA-2210-7734 email (PT ambulation distance and level of assist). It may or may not cite the agent chat; that isn't required (<a href="known-issues.html#ki-10">KI-10</a>).</td></tr>
+  <tr><td>7</td><td>Command Center</td><td>Open the app and select Refresh. Compare the tiles with <code>expected_kpis.py</code>.</td><td>The KPI tiles, both bar panels and the plans table load, and the numbers match the script. They drift with the date until the next re-seed.</td></tr>
+</table></div>
+<p>The prompts, with copy buttons and what to say around them, are in the <a href="demo-script.html#demo-script">demo script</a>.</p>
+
+<h2 id="scripts">Check scripts</h2>
+<p>Run from the repo root. They use the signed-in az account (<code>AUTH_MODE=azcli</code> in <code>.env</code>), so az must be on the M365x tenant (<a href="known-issues.html#ki-08">KI-08</a>).</p>
+<div class="tablewrap"><table>
+  <tr><th>Script</th><th>What it checks</th></tr>
+  <tr><td><code>scripts/preflight.py</code></td><td>Lists publishers and whether the solution and the three <code>amc_</code> tables exist. Written as a collision check before <code>create_schema.py</code>; also a quick "is everything there" check.</td></tr>
+  <tr><td><code>scripts/verify_seed.py</code></td><td>Plans by status, unit and readmission risk; O'G's active caseload; plans missing the patient lookup; and Miguel Reyes's tasks with their status and barrier flag.</td></tr>
+  <tr><td><code>scripts/expected_kpis.py</code></td><td>Computes the Code App's KPI values from Dataverse with the same rules as <code>code-app/src/data/metrics.ts</code>: expected discharges today, medically ready but still here (and avoidable bed-days), open barriers, median prior-auth hours, high risk, and the top of the table.</td></tr>
+  <tr><td><code>scripts/test_foundry.py</code></td><td>Calls both deployments (<code>patient-summary</code>, <code>prior-auth</code>) on the OpenAI v1 chat completions endpoint and prints <code>[PASS] &lt;deployment&gt; -&gt; model=…</code>. Default: direct to Foundry with an Entra token (the tenant disables keys). <code>--apim</code>: through APIM with the subscription key, the path the connector uses. The key is fetched at runtime and never printed.</td></tr>
+</table></div>
+<pre><code>python scripts/preflight.py
+python scripts/verify_seed.py
+python scripts/expected_kpis.py
+python scripts/test_foundry.py
+python scripts/test_foundry.py --apim
+cd code-app &amp;&amp; npm run build
+</code></pre>
+
+<h2 id="each-layer">Testing each layer on its own</h2>
+<div class="tablewrap"><table>
+  <tr><th>Layer</th><th>How</th></tr>
+  <tr><td>Foundry deployments</td><td><code>python scripts/test_foundry.py</code> (Entra token, direct).</td></tr>
+  <tr><td>APIM &rarr; Foundry</td><td><code>python scripts/test_foundry.py --apim</code> (subscription key, APIM's managed identity to Foundry). Details: <a href="foundry.html#apim">Foundry: APIM</a>.</td></tr>
+  <tr><td>Connector connection <code>amc-foundry-key</code></td><td>The Chat completion action through the Power Platform connector runtime (Power Platform &rarr; APIM &rarr; Foundry). Details: <a href="foundry.html#connector">Foundry: connector</a>.</td></tr>
+  <tr><td>Dataverse MCP server</td><td>Watch the tool calls in the Copilot Studio Test pane. <code>read_query</code> is SQL; choice, boolean and lookup labels come back in <code>&lt;column&gt;name</code> columns (<a href="known-issues.html#ki-18">KI-18</a>).</td></tr>
+  <tr><td>Agent, draft version</td><td>Copilot Studio Test pane. Shows the activity, including each Chat completion call and its <b>Model deployment</b> input.</td></tr>
+  <tr><td>Agent, published version</td><td>Teams or Microsoft 365 Copilot. Runs as the signed-in user for Dataverse (end-user auth, <a href="decisions.html#adr-0007">ADR-0007</a>). Publish first after a change (<a href="runbook.html#publish-the-agent">runbook</a>).</td></tr>
+  <tr><td>Did the drafts really come from Foundry?</td><td>The <code>Model:</code> line in the reply, and the Foundry <code>ModelRequests</code> metric split by <code>ModelDeploymentName</code>. Always pass explicit <code>--start-time</code> and <code>--end-time</code>; without them the buckets are misleading (<a href="known-issues.html#ki-12">KI-12</a>, <a href="foundry.html#metrics">Foundry: metrics</a>).</td></tr>
+  <tr><td>Saved drafts</td><td>The Command Center drawer (Agent drafts, then Reload), or the plan's <code>amc_patientsummary</code> and <code>amc_priorauthpacket</code> columns.</td></tr>
+  <tr><td>Conversation transcripts</td><td>They reach Dataverse only after the session goes idle, so don't expect them right after a test (<a href="known-issues.html#ki-11">KI-11</a>).</td></tr>
+  <tr><td>Code App</td><td>The deployed app (<a href="user-guide.html#open-the-apps">user guide</a>), Refresh, and compare with <code>expected_kpis.py</code>. <code>npm run build</code> must be clean before any deploy.</td></tr>
+</table></div>
+
+<h2 id="results-log">Results log</h2>
+<div class="tablewrap"><table>
+  <tr><th>Date</th><th>What</th><th>Result</th></tr>
+  <tr><td>2026-10-15</td><td><code>test_foundry.py</code>, direct and <code>--apim</code></td><td><span class="pill green">Pass</span> Both deployments answered both ways.</td></tr>
+  <tr><td>2026-10-15</td><td>Code App v1.0.0: <code>npm run build</code> and <code>expected_kpis.py</code></td><td><span class="pill green">Pass</span> Strict build clean. Script: 12 expected discharges today, 8 medically ready but still here (11 avoidable bed-days), 44 open barriers, 38 h median prior-auth turnaround (n=7), 10 high risk.</td></tr>
+  <tr><td>2026-10-19</td><td>Foundry connection through the Power Platform connector runtime</td><td><span class="pill green">Pass</span> Power Platform &rarr; APIM &rarr; Foundry answered (gpt-5.5).</td></tr>
+  <tr><td>2026-10-19</td><td>Dataverse MCP server read of DP-1001</td><td><span class="pill green">Pass</span> Returned the plan with choice labels in <code>&lt;column&gt;name</code> columns.</td></tr>
+  <tr><td>2026-10-19</td><td>#1–4 in Microsoft 365 Copilot, run by O'G after the 13:03 UTC publish</td><td><span class="pill green">Pass</span> Foundry <code>ModelRequests</code> shows <code>patient-summary</code> and <code>prior-auth</code> each called once per round (12:46 and 13:01 buckets). The prior-auth packet saved to DP-1001 at 12:59 (5,416 characters) and quotes "150 ft". The patient instructions came back in Spanish, as intended; they weren't saved to the plan. APIM showed one rejected call before the successful ones.</td></tr>
+  <tr><td>2026-10-19</td><td>Code App v1.1.0 (Agent drafts viewer) deployed</td><td><span class="pill green">Pass</span> Deployed at 13:48 UTC. The app is still only in AMCDischargeNavigator.</td></tr>
+  <tr><td>2026-10-21</td><td>Pre-recording backend check: <code>preflight.py</code>, <code>verify_seed.py</code>, <code>test_foundry.py --apim</code>, <code>check_governance.py</code>, <code>pac copilot pull</code>, solution membership, <code>npm run build</code></td><td><span class="pill green">Pass</span> Both deployments answered through APIM (mistral-large-3, gpt-5.5-2026-04-24). The agent pull applied 0 changes. 18 components, none in another solution. Managed Environment on, 0 DLP policies. No Barrier Tracker left over. The data was still anchored on 2026-10-15.</td></tr>
+  <tr><td>2026-10-22</td><td>Re-seed (anchor 2026-10-22): <code>verify_seed.py</code>, <code>expected_kpis.py</code>, <code>test_foundry.py --apim</code></td><td><span class="pill green">Pass</span> 36/36/209. Miguel has 3 open barriers and no drafts. KPIs: 12 expected discharges today, 8 medically ready but still here (11 avoidable bed-days), 44 open barriers, 38 h median prior-auth turnaround (n=7), 10 high risk. Both deployments answered through APIM.</td></tr>
+  <tr><td>2026-10-31</td><td>Re-seed (anchor 2026-11-01, the recording date): <code>verify_seed.py</code>, <code>expected_kpis.py --as-of 2026-11-01</code>, <code>test_foundry.py --apim</code>, Barrier Tracker check</td><td><span class="pill green">Pass</span> 36/36/209. Miguel has 3 open barriers and no drafts; medically ready 2026-10-31, expected discharge 2026-11-01. KPIs as of 2026-11-01 match the 2026-10-22 seed: 12, 8 (11 bed-days), 44, 38 h (n=7), 10. Both deployments answered through APIM. No Barrier Tracker app.</td></tr>
+  <tr><td>2026-11-01</td><td>Code App v1.2.0 (Ask Discharge Navigator) deployed with <code>pac code push</code></td><td><span class="pill green">Pass</span> Strict build clean; the app is still only in AMCDischargeNavigator. O'G's first chat: the screen went white when the reply arrived (<a href="known-issues.html#ki-34">KI-34</a>).</td></tr>
+  <tr><td>2026-11-01</td><td>Code App v1.2.1, local play in the Power Apps player: "What's still blocking Miguel Reyes?" from Ask Discharge Navigator</td><td><span class="pill green">Pass</span> Reply in about 40 seconds with his 3 barriers, rendered in the panel, no crash and no consent prompt (the agent read Dataverse as O'G). Deployed afterwards; the app is still only in AMCDischargeNavigator.</td></tr>
+  <tr><td>2026-11-01</td><td>Code App v1.2.1, published app, run by O'G: Ask Discharge Navigator</td><td><span class="pill green">Pass</span> "That worked great."</td></tr>
+  <tr><td>2026-11-01</td><td>Agent through the connector: "Which patients are medically ready but still in the hospital?"</td><td><span class="pill amber">Don't use on camera</span> It read the question as O'G's own patients with plan status Medically Ready and answered 1 (Ruth Lindqvist, DP-1003). It left out Miguel, whose status is Pending Barriers, while the Command Center tile says 8 house-wide.</td></tr>
+  <tr><td>2026-11-01</td><td>Barrier Tracker built with Apps in Copilot Studio (preview) in og-svc</td><td><span class="pill green">Pass</span> Real data in the preview and after publishing, using the Dataverse connector's selected-environment operations with O'G's own connection (<a href="known-issues.html#ki-31">KI-31</a>). Table data sources and current-environment operations both failed first. The working steps are now in the <a href="deck.html#prompt">prompt on the deck's request slide</a>.</td></tr>
+  <tr><td>2026-11-01</td><td>New tenant (og-svc), Teams, after the KI-30 fix and O'G's publish: "Build the SNF prior-auth packet for Miguel Reyes"</td><td><span class="pill green">Pass</span> Full packet with chart citations, the payer's ambulation detail ("150 ft with a rolling walker and standby assist"), a documentation checklist and open questions, marked DRAFT, last line <code>Model: gpt-5.5-2026-04-24</code>. The first try, before the fix, said the Foundry model was unavailable (<a href="known-issues.html#ki-30">KI-30</a>).</td></tr>
+  <tr><td>2026-11-01</td><td>New tenant (og-svc): O'G asked the agent "What's holding up Miguel Reyes's discharge?" after connecting Dataverse</td><td><span class="pill green">Pass</span> Three open barriers (prior auth, Maple Grove bed acceptance, wheelchair van) with owners, external parties and notes, and the prior auth as the critical next step. The Dataverse tool ran with O'G's own connection.</td></tr>
+  <tr><td>2026-11-01</td><td>Recording-day check: sign-ins (az, pac, pa), <code>verify_seed.py</code>, <code>expected_kpis.py</code> (live), <code>test_foundry.py --apim</code>, DP-1001 drafts, agent publish state, preferred solution, Barrier Tracker app and Teams tab</td><td><span class="pill green">Pass</span> Data unchanged since the 2026-10-31 seed. Live KPIs 12, 8 (11), 44, 38 h (n=7), 10. Agent last published 2026-10-19 13:03 UTC. Preferred solution AMCDischargeNavigator. 6 East Care Team &gt; General has only Notes and Files.</td></tr>
+</table></div>
+<p class="muted">Not run yet: #5 (the barrier loop, added 2026-10-20) and #6 (Graph recall; seeded 2026-10-19, check pending). See <a href="status.html#your-next-steps">Status</a>.</p>
+
+<h2 id="evaluation">Evaluation (to add)</h2>
+<ul>
+  <li><b>Copilot Studio:</b> the Evaluate tab is preview on harness agents and only offers General quality (<a href="known-issues.html#ki-19">KI-19</a>). Not set up. #1–4 above would be the obvious first test set.</li>
+  <li><b>Foundry:</b> no evaluations on the two deployments yet.</li>
+</ul>
+</main>
+</body>
+</html>

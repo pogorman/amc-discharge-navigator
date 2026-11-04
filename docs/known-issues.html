@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Known issues · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html" aria-current="page">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="known-issues-and-platform-limits">Known issues and platform limits</h1>
+<p><span class="pill red">Blocks</span> blocks a scenario · <span class="pill amber">Workaround</span> workaround in place · <span class="pill grey">Info</span> informational</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Status</th>
+<th>Issue</th>
+<th>Workaround / next step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td id="ki-01" class="nowrap">KI-01</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>No Foundry API keys.</strong> <code>disableLocalAuth=true</code> is set on the Foundry resource (enforced by the old tenant; also set on <code>cuh-discharge-foundry2</code>), so it only accepts Entra ID tokens.</td>
+<td>APIM <code>cuh-discharge-apim2</code> calls Foundry with its system-assigned managed identity, which has <strong>Cognitive Services User</strong> on the Foundry resource (<a href="decisions.html#adr-0003">ADR-0003</a>). For keyless testing, admin@&lt;tenant&gt; also has Cognitive Services User: <code>python scripts/test_foundry.py</code> (direct) and <code>--apim</code> (through APIM).</td>
+</tr>
+<tr>
+<td id="ki-02" class="nowrap">KI-02</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>Copilot Studio's native "bring your own Foundry model" prompts don't support GPT-5-family models</strong> (per Microsoft Learn, Oct 2026). The GitHub Copilot harness doesn't help: its model list doesn't include our Foundry deployments, and its tools are only connectors, MCP servers and workflows.</td>
+<td>The custom connector <strong>Foundry Deployments</strong> calls APIM with <code>Ocp-Apim-Subscription-Key</code>, and each skill passes the deployment name (<a href="decisions.html#adr-0004">ADR-0004</a>). If someone asks "why not the native prompt?" on camera, this is the answer.</td>
+</tr>
+<tr>
+<td id="ki-03" class="nowrap">KI-03</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong><code>pac copilot init</code> always creates its own solution and publisher.</strong> The solution is named after the schema and the publisher after the prefix, and you can't choose otherwise. On 2026-10-19 it created solution <code>amc_DischargeNavigator</code> (bot only) and a second publisher <code>amc</code>. Claude didn't report them; O'G found and deleted both.</td>
+<td>If you ever init again, report both side effects in the same turn and remove them right away. Then check that the bot, its components, the tables and the connection references are still in AMCDischargeNavigator (<a href="runbook.html#solution-membership">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-04" class="nowrap">KI-04</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong><code>pac copilot init --instructions</code> fails</strong> ("Not a valid command") when the value is multi-line or contains quotes.</td>
+<td>Init with a one-line instruction, then edit <code>agent/settings.mcs.yml</code> and push (<a href="runbook.html#edit-the-agent">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-05" class="nowrap">KI-05</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>New components land in the maker's preferred solution</strong> (<code>usersettings._preferredsolution_value</code>), together with the tables they depend on. O'G's was <strong>MedicaidIntegrityLab</strong>, so the agent, its components, the Foundry connection reference and our 3 tables were added there as well as to ours.</td>
+<td>On 2026-10-19, with O'G's OK, 11 AMC components were removed from MedicaidIntegrityLab (membership only; nothing was deleted). O'G then switched his preferred solution to <strong>AMCDischargeNavigator</strong>. Still check before and after every init or push, and never let AMC components land in another project's solution (<a href="runbook.html#solution-membership">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-06" class="nowrap">KI-06</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>Editing a tool in the portal can swap its connection reference for a new one.</strong> When O'G trimmed the Dataverse MCP tools on 2026-10-19, the portal replaced the original reference with <code>amc_DischargeNavigator.cr.shared_commondataserviceforapps.75ec0d0e-c92a-4093-a137-820b42674f99</code> (in AMCDischargeNavigator only). It happened again in og-svc on 2026-11-01, when O'G set the tool's authentication: the new reference <code>...889074b5-0cd8-499d-a619-4ced19d5b57e</code> landed only in the Default solution, because his preferred solution there isn't set.</td>
+<td>Always <code>pac copilot pull</code> before <code>pac copilot push</code>, so a push doesn't point the tool back at a stale reference (<a href="runbook.html#edit-the-agent">runbook</a>). After any portal edit, check the agent's connection references are in AMCDischargeNavigator and add them if not (<code>AddSolutionComponent</code>, component type 10164; <a href="runbook.html#solution-membership">runbook</a>). Claude did that for the 2026-11-01 reference.</td>
+</tr>
+<tr>
+<td id="ki-07" class="nowrap">KI-07</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong><code>pa app push --solution-id …</code> fails</strong> with "sign-in session has expired … non-interactive mode", even right after <code>pa auth login</code> and <code>pa auth login -e &lt;env&gt;</code>. A <code>!</code> command from Claude Code is non-interactive too, so it can't recover the session.</td>
+<td>For an update to the existing app, run <code>npx --no-install pa app push --non-interactive</code> <strong>without</strong> <code>--solution-id</code>. It updates by the appId in <code>power.config.json</code>. Afterwards, check that the app is still only in AMCDischargeNavigator (<a href="runbook.html#deploy-the-code-app">runbook</a>). Used for v1.1.0 on 2026-10-19.</td>
+</tr>
+<tr>
+<td id="ki-08" class="nowrap">KI-08</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>az and <code>pa</code> sign-ins are machine-global.</strong> The the-agents repo keeps them on the demo tenant (admin@&lt;tenant&gt;). On 2026-10-20, az was found signed in there, so Dataverse calls here failed with "The user is not a member of the organization." Earlier, switching tenants in another terminal broke a running script.</td>
+<td>Since 2026-11-01 this repo and the-agents both use the demo tenant (admin@&lt;tenant&gt;), so switching is rarely needed. Before running anything here, check with <code>az account show</code>, <code>pac org who</code> and <code>npx --no-install pa auth status</code> (<a href="runbook.html#sign-ins">runbook</a>). Switch back when you go back to the-agents.</td>
+</tr>
+<tr>
+<td id="ki-09" class="nowrap">KI-09</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Mistral-Large-3 answered "GPT" when asked to name itself</strong> in testing. Models don't reliably know their own name.</td>
+<td>Never ask a model what it is on camera. Point at the <code>Model:</code> line each skill adds from the response's <code>model</code> field, and at the deployments list in Foundry (<a href="decisions.html#adr-0005">ADR-0005</a>).</td>
+</tr>
+<tr>
+<td id="ki-10" class="nowrap">KI-10</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Microsoft 365 Copilot's Graph indexing has no published time.</strong> It's usually hours. The beat 1 recall may find the seeded emails but not the earlier Discharge Navigator chat.</td>
+<td>Seed early (done 2026-10-19), then run the beat 1 prompt a few hours later or the next day. Don't promise on camera that it finds the agent chat (<a href="decisions.html#adr-0011">ADR-0011</a>, <a href="runbook.html#graph-seeding">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-11" class="nowrap">KI-11</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Conversation transcripts reach Dataverse only after the session goes idle.</strong> Right after a test, there's nothing to read.</td>
+<td>To verify from the backend that the drafts came from Foundry, use the Foundry <code>ModelRequests</code> metric (KI-12) and the saved draft columns on the plan, not transcripts (<a href="foundry.html#metrics">Foundry</a>).</td>
+</tr>
+<tr>
+<td id="ki-12" class="nowrap">KI-12</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Foundry <code>ModelRequests</code> metric buckets are misleading without an explicit time window.</strong> A first query on 2026-10-19 wrongly suggested no calls had been made.</td>
+<td>Filter by <code>ModelDeploymentName</code> and always pass explicit <code>--start-time</code> and <code>--end-time</code> (<a href="foundry.html#metrics">Foundry</a>).</td>
+</tr>
+<tr>
+<td id="ki-13" class="nowrap">KI-13</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong><code>az rest</code> crashes on Windows</strong> when it prints APIM's policy XML, which starts with a BOM.</td>
+<td><code>infra/provision-apim.sh</code> calls <code>infra/apim_config.py</code>, which applies the policy and creates the subscription with an ARM token instead of <code>az rest</code> (<a href="runbook.html#azure-provisioning">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-14" class="nowrap">KI-14</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>Git Bash rewrites <code>/subscriptions/...</code> arguments</strong> into Windows paths, which breaks <code>az ... --scope</code> and ARM URLs.</td>
+<td>Set <code>MSYS_NO_PATHCONV=1</code> (the infra scripts export it), or use PowerShell.</td>
+</tr>
+<tr>
+<td id="ki-15" class="nowrap">KI-15</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>A connection reference for a custom connector needs <code>customconnectorid</code> set</strong>, or solution export fails.</td>
+<td>The Foundry Deployments connection reference is linked to the connector record (done 2026-10-19). If you recreate it, set the link before exporting (<a href="runbook.html#re-export-the-solution">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-16" class="nowrap">KI-16</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>PAC rewrites inline skills on push.</strong> A skill written flat as <code>behaviors/&lt;name&gt;.mcs.yml</code> (<code>kind: InlineAgentSkill</code>) comes back as <code>behaviors/&lt;name&gt;/SKILL.md</code> + <code>skill.mcs.yml</code>.</td>
+<td>Expected. Edit the rewritten files after the first push (<a href="copilot-studio.html#skills">Copilot Studio</a>).</td>
+</tr>
+<tr>
+<td id="ki-17" class="nowrap">KI-17</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Date-only columns come back as <code>YYYY-MM-DDT00:00:00Z</code></strong> from the Web API.</td>
+<td>Compare on the date part only (the Code App and the check scripts do).</td>
+</tr>
+<tr>
+<td id="ki-18" class="nowrap">KI-18</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Dataverse MCP <code>read_query</code> is SQL</strong>, and choice, boolean and lookup labels come back in separate <code>&lt;column&gt;name</code> columns, not in the value column.</td>
+<td>The agent's instructions name those columns. Verified 2026-10-19: the MCP server read DP-1001 with the choice label (<a href="copilot-studio.html#instructions">Copilot Studio</a>).</td>
+</tr>
+<tr>
+<td id="ki-19" class="nowrap">KI-19</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>The Evaluate tab on a harness agent is preview</strong> ("production-ready preview") and only offers General quality. It's GA on standard agents.</td>
+<td>If you show it, say preview on camera (<a href="demo-script.html#preview-status">preview status</a>).</td>
+</tr>
+<tr>
+<td id="ki-20" class="nowrap">KI-20</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>The demo sign-in's display name is "MOD Administrator"</strong>, so <code>{System.User.DisplayName}</code> would match no case manager and "my patients" would return nobody.</td>
+<td>"My patients" is fixed to <strong>Patrick O'Gorman</strong> in the instructions (<a href="decisions.html#adr-0008">ADR-0008</a>).</td>
+</tr>
+<tr>
+<td id="ki-21" class="nowrap">KI-21</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Claude Code's auto-mode classifier blocks <code>pac copilot publish</code></strong>, and other actions it classes as a production deploy or a change to shared resources (for example switching the preferred solution), unless that turn asks for it.</td>
+<td>Claude publishes agents for O'G. If a publish is blocked, Claude says which is needed: "publish it" in that turn, or the allow rule <code>Bash(pac copilot publish:*)</code> via <code>/permissions</code>. Claude doesn't work around it (<a href="runbook.html#publish-the-agent">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-22" class="nowrap">KI-22</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>The code-app template doesn't bundle the <code>pa</code> CLI.</strong> <code>@microsoft/power-apps-cli</code> is a local devDependency.</td>
+<td>Always run <code>npx --no-install pa …</code> from <code>code-app/</code>.</td>
+</tr>
+<tr>
+<td id="ki-23" class="nowrap">KI-23</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>The first Dataverse MCP call in Teams can prompt a sign-in</strong>, because the tool uses end-user auth.</td>
+<td>Run one prompt in the same Teams client before you record, so consent is done (<a href="demo-script.html#before-you-record">before you record</a>).</td>
+</tr>
+<tr>
+<td id="ki-24" class="nowrap">KI-24</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong><code>seed_data.py --reset</code> takes about 10 minutes</strong>, because deletes run one at a time.</td>
+<td>Start the recording-day re-seed early (<a href="runbook.html#re-seed">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-25" class="nowrap">KI-25</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Claude Code's auto-mode classifier blocks <code>seed_data.py --reset</code></strong> ("Cloud Storage Mass Delete"), because it deletes every demo row before it recreates them. Seen 2026-10-21.</td>
+<td>Say "re-seed it" in the turn you want it run, or add the allow rule <code>Bash(python scripts/seed_data.py:*)</code> via <code>/permissions</code>. You can also run it yourself: <code>! python scripts/seed_data.py --reset --anchor &lt;date&gt;</code> (<a href="runbook.html#re-seed">runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-26" class="nowrap">KI-26</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Python scripts failed with "Failed to invoke the Azure CLI"</strong>: <code>az account get-access-token</code> timed out after 10 seconds, which is <code>AzureCliCredential</code>'s default. It happened on the first token call on a fresh laptop, while other az calls ran at the same time. Seen 2026-10-31. Nothing was deleted.</td>
+<td>Fixed: <code>scripts/auth.py</code> now passes <code>process_timeout=60</code>. Avoid running other az commands while a re-seed is going.</td>
+</tr>
+<tr>
+<td id="ki-27" class="nowrap">KI-27</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>Apps in Copilot Studio don't build in the environment Copilot Studio is pointed at.</strong> They run on Copilot Managed Runtime, which always builds in the maker's own personal developer environment. Routing for it is on in every tenant and can't be turned off. Here the router put admin@&lt;previous-tenant&gt; in <strong>og-dv</strong> ("Default Environment Group"), which doesn't have our tables. Asked to use Discharge Tasks, the builder replied asking for an environment ID and table names. Given the address, ID and logical names, it then <strong>refused og-ai-dev outright</strong>: "App Builder doesn't recognise that environment's database address as one it supports". Reading through the existing Dataverse connection was refused too. It created an empty, unpublished "Barrier Tracker" in its own environment. Microsoft's docs don't say whether these apps can reach Dataverse in another environment. Seen 2026-11-01 (<a href="https://learn.microsoft.com/power-platform/admin/default-environment-routing-copilot-managed-runtime">Learn: environment routing for Copilot Managed Runtime</a>).</td>
+<td><strong>Worked around by moving tenants (<a href="decisions.html#adr-0015">ADR-0015</a>).</strong> In the demo tenant the builder reads Dataverse in the personal environment (og-dev) and across environments (og-svc). Background, from the old tenant: Naming og-ai-dev by its web address (<a href="deck.html#prompt">the deck's request slide</a>) wasn't enough. A test against the standard Account table in the builder's own environment (og-dv) was refused the same way, so the builder won't connect to Dataverse anywhere in this tenant. All the environments involved are ordinary US-region, managed Developer environments on Dataverse 9.2, and Dataverse is on the app builder's default connector allow list. Nothing in the tenant explains it, so it needs the Copilot Studio product team or Microsoft support. Don't fix it by copying the tables into og-dv: that splits the data from the agent and the Command Center. And don't add og-ai-dev to the routing group: that group's default connector allow list would block our Foundry Deployments custom connector.</td>
+</tr>
+<tr>
+<td id="ki-28" class="nowrap">KI-28</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>Dataverse Python SDK 1.0.0 rejects <code>create_schema.py</code>'s column specs</strong> ("Unsupported column spec type ... expected str or Enum subclass"). The script was written against an earlier SDK that took dicts with display names and lengths; 1.0.0 only takes a type name and makes up the display name. Seen 2026-11-01 on the second laptop.</td>
+<td>Fixed: <code>create_schema.py</code> now posts table and column metadata to the Web API directly, matching the original tables (date-only columns UserLocal, Name required with length 850). It also adds any missing columns to a table that already exists, and retries Dataverse's transient "unexpected error" (0x80040216).</td>
+</tr>
+<tr>
+<td id="ki-29" class="nowrap">KI-29</td>
+<td><span class="pill grey">Info</span></td>
+<td><strong>The solution can't be imported into an empty environment.</strong> It includes Discharge Plan and Discharge Task without their columns (<code>behavior="1"</code>), a side effect of the agent's tools pulling them in, so the import fails with missing dependencies on those two tables. Seen 2026-11-01.</td>
+<td>Fixed for future imports: the 2026-11-01 re-export from og-svc includes all three tables in full. Running <code>scripts/create_schema.py</code> before the import is still the safe order, since it's idempotent (<a href="runbook.html#new-tenant">runbook: new tenant</a>). The export at tag <code>previous-tenant</code> still has the problem.</td>
+</tr>
+<tr>
+<td id="ki-30" class="nowrap">KI-30</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>After a solution import, the agent's Foundry tool still names the old environment's connector.</strong> A custom connector gets a new internal name in each environment (<code>shared_new-5ffoundry-20deployments-5fe712c9f154572394</code> in og-ai-dev, <code>...-5fa6b26604e9b050ca</code> in og-svc). The import updated the connection reference but not the tool's <code>connectorId</code>, so in Teams the agent said the Foundry model was unavailable, and its call never reached APIM. The portal still showed the tool's credentials as "Shared account amc-foundry-key", so nothing looked wrong there. The built-in Dataverse connector has the same ID everywhere, so its tool wasn't affected. Seen 2026-11-01.</td>
+<td>Set <code>connectorId</code> in <code>agent/capabilities/tools/amc_foundry-chat-completion.mcs.yml</code> to the connector's internal name in the new environment (<code>connectors.connectorinternalid</code>), then <code>pac copilot pull</code>, <code>pac copilot push</code> and publish (<a href="runbook.html#new-tenant">runbook: new tenant</a>).</td>
+</tr>
+<tr>
+<td id="ki-31" class="nowrap">KI-31</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>The Copilot Studio app builder refuses table data sources in an environment with a custom address.</strong> After O'G renamed og-svc's address from <code>org314e90f5.crm.dynamics.com</code> to <code>og-svc.crm.dynamics.com</code>, adding Discharge Tasks as a table data source failed ("App Builder won't read og-svc's Dataverse address"; it "only accepts the usual pattern"), even with the right environment ID. Reading og-svc had worked that morning, under the old address. The working CMR apps in og-d365 (built with the <code>ms</code> CLI) use its usual address. The old tenant's og-ai-dev and og-dv had custom addresses too, which probably explains <a href="#ki-27">KI-27</a>. Seen 2026-11-01.</td>
+<td>The prompt on the deck's request slide asks for the Dataverse connector's <b>selected-environment</b> operations with og-svc's address, through the existing og-svc Dataverse connection, and gives the environment ID. The current-environment operations fail too ("invalid organization URL"). With that, the builder built the app in og-svc and showed real data in the preview and after publishing (<a href="deck.html#prompt">the deck's request slide</a>). Alternative: change og-svc's address back to the usual pattern, which should let the plain prompt work. Before a retake, delete the old app and any "Power Platform for Admins" connection the builder started.</td>
+</tr>
+<tr>
+<td id="ki-32" class="nowrap">KI-32</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>The Copilot Studio connector's documented "Execute Agent and wait" (<code>ExecuteCopilotAsyncV2</code>) rejects GitHub Copilot harness agents</strong>, so a Code App can't call Discharge Navigator with it. The connector's internal <code>ExecuteCopilotAsyncV2OnAgenticRuntime</code> works, but it's undocumented, and the generated schema types its 200 response as <code>void</code>, which drops the reply.</td>
+<td>Code App v1.2.0 calls the agentic-runtime operation with <code>notificationUrl: ""</code> and widens the 200 response to an object at load (<code>code-app/src/data/agentClient.ts</code>), the same pattern as the-agents repo. Microsoft can change or remove it; the supported fallback is a Copilot Studio workflow with an agent node (<a href="decisions.html#adr-0017">ADR-0017</a>). The panel can't show a sign-in or consent card: if one comes back, it tells the user to allow the connection in Teams once.</td>
+</tr>
+<tr>
+<td id="ki-33" class="nowrap">KI-33</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>The npm <code>pa</code> CLI keeps its own sign-in, separate from <code>pac</code>.</strong> On 2026-11-01, <code>pac</code> was on admin@&lt;tenant&gt; (og-svc) while <code>npx --no-install pa auth status</code> still said admin@&lt;previous-tenant&gt;.</td>
+<td>Deploy with <code>pac code push --solutionName AMCDischargeNavigator</code> from <code>code-app/</code>; it uses pac's sign-in and updates the app by the appId in <code>power.config.json</code> (<a href="runbook.html#deploy-the-code-app">Runbook</a>). Used for v1.2.0. To use <code>pa</code> (for example on camera in beat 5), run <code>npx --no-install pa auth login</code> first.</td>
+</tr>
+<tr>
+<td id="ki-34" class="nowrap">KI-34</td>
+<td><span class="pill green">Fixed</span></td>
+<td><strong>Chrome 156's <code>scrollIntoView()</code> returns a value</strong> (it used to return <code>undefined</code>). A React effect written as a one-line arrow, <code>useEffect(() =&gt; ref.current?.scrollIntoView(), …)</code>, hands that value to React as its cleanup. React calls it on the next render, throws "destroy is not a function", and unmounts the app. In Code App v1.2.0 the whole screen went white when the agent's reply arrived.</td>
+<td>Write effects with braces so they return nothing (v1.2.1, <code>AgentPanel.tsx</code>). To see a crash inside the Power Apps player, whose cross-origin frame hides the console: run <code>npm run dev</code> in <code>code-app/</code>, open the Local Play URL it prints (Chrome asks once to allow local network access), and pass <code>onUncaughtError</code> to <code>createRoot</code> to print the error on the page.</td>
+</tr>
+<tr>
+<td id="ki-35" class="nowrap">KI-35</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>imageio-ffmpeg has no ffmpeg for ARM64 Windows.</strong> On og-surface (ARM64), a venv made with the default ARM64 Python installs <code>imageio-ffmpeg</code>, but <code>get_ffmpeg_exe()</code> fails with "No ffmpeg exe could be found", so <code>build_demo_video.py</code> and the hero video's H.264 step can't run.</td>
+<td>Make the throwaway venv with the x64 Python, which is installed on og-surface too: <code>py -V:3.13 -m venv &lt;dir&gt;</code>. Its wheel bundles the x64 ffmpeg, which runs under emulation; the full demo video build still finishes in a few minutes (<a href="runbook.html#demo-video">Runbook</a>).</td>
+</tr>
+<tr>
+<td id="ki-36" class="nowrap">KI-36</td>
+<td><span class="pill amber">Workaround</span></td>
+<td><strong>Azure Speech with Entra ID wants its own token format.</strong> The Foundry resource has no keys (<code>disableLocalAuth</code>), so the demo video's narration signs in with Entra ID, and Speech's REST API takes the Entra token wrapped with the resource ID, not on its own (Microsoft's text to speech REST docs).</td>
+<td>Send <code>Authorization: Bearer aad#&lt;resource id&gt;#&lt;Entra token for https://cognitiveservices.azure.com&gt;</code> to <code>https://&lt;resource&gt;.cognitiveservices.azure.com/tts/cognitiveservices/v1</code> (the voice list is at <code>/tts/cognitiveservices/voices/list</code>). The az account needs Cognitive Services User on the resource; admin@&lt;tenant&gt; has it. <code>build_demo_video.py</code> does this (<code>speech_auth()</code>).</td>
+</tr>
+</tbody>
+</table></div>
+<p>To add an issue, append a row with the next number and <code>id="ki-NN"</code> on the ID cell, so other pages can link to it.</p>
+</main>
+</body>
+</html>

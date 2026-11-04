@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Copilot Studio · AMC Discharge Navigator</title>
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <a class="brand" href="index.html">AMC Discharge Navigator</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="status.html">Status</a>
+      <a href="eli5.html">ELI5</a>
+      <a href="user-guide.html">User guide</a>
+      <a href="demo-script.html">Demo script</a>
+      <a href="deck.html">Deck</a>
+      <a href="hero-video.html">Hero video</a>
+      <a href="technical-guide.html">Technical guide</a>
+      <a href="runbook.html">Runbook</a>
+      <a href="testing.html">Testing</a>
+      <a href="environments.html">Environments</a>
+      <a href="known-issues.html">Known issues</a>
+      <a href="roadmap.html">Roadmap</a>
+      <a href="decisions.html">Decisions</a>
+      <a href="copilot-studio.html" aria-current="page">Copilot Studio</a>
+      <a href="foundry.html">Foundry</a>
+      <a href="dataverse.html">Dataverse</a>
+      <a href="changelog.html">Changelog</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1 id="copilot-studio-agent">Copilot Studio agent: Discharge Navigator</h1>
+<p>One agent on the GitHub Copilot harness, with no topics (<a href="decisions.html#adr-0006">ADR-0006</a>): instructions, two tools and two skills. It lives in Dataverse (og-svc) and in the PAC workspace <code>agent/</code>. This page is its written spec. Keep it in sync, and add a row to the <a href="#edit-log">edit log</a> after every change.</p>
+
+<h2 id="overview">Overview</h2>
+<div class="tablewrap"><table>
+  <tr><th>Field</th><th>Value</th></tr>
+  <tr><td>Display name</td><td>Discharge Navigator</td></tr>
+  <tr><td>Schema name</td><td><code>amc_DischargeNavigator</code></td></tr>
+  <tr><td>Bot id</td><td><code>995d5b75-d488-42ba-8a99-9a5206a02f1e</code></td></tr>
+  <tr><td>Environment</td><td>og-svc (<code>&lt;environment-id&gt;</code>). Every ID: <a href="environments.html#power-platform">Environments</a></td></tr>
+  <tr><td>Solution</td><td>AMC Discharge Navigator (<code>AMCDischargeNavigator</code>), with the bot, its 4 components and both connection references. Never let its components land in another solution (<a href="known-issues.html#ki-05">KI-05</a>).</td></tr>
+  <tr><td>Harness</td><td><strong>GitHub Copilot harness</strong> (<code>authoringModel: CliCopilot</code>, recognizer <code>CLICopilotRecognizer</code>). Created with <code>pac copilot init --authoring-mode cli-copilot</code>. A harness can't be changed after creation.</td></tr>
+  <tr><td>Topics</td><td>None. O'G's decision, 2026-10-19 (<a href="decisions.html#adr-0006">ADR-0006</a>).</td></tr>
+  <tr><td>Model</td><td>Claude Sonnet 4.6, pinned (<code>model.series: Sonnet46</code>). It orchestrates; the two model deployments in Foundry write the drafts.</td></tr>
+  <tr><td>Authentication</td><td><code>authenticationMode: Integrated</code>, <code>authenticationTrigger: Always</code>, <code>accessControlPolicy: GroupMembership</code></td></tr>
+  <tr><td>Channels</td><td>Microsoft Teams and Microsoft 365 Copilot (<a href="#channels">below</a>)</td></tr>
+  <tr><td>Published</td><td>In og-svc: 2026-11-01 16:53 UTC by O'G, after the KI-30 fix. In the previous tenant: 2026-10-19 12:31 UTC by Claude, then 13:03 UTC by O'G. <code>publishedOn</code> in <code>settings.mcs.yml</code> holds the last one.</td></tr>
+  <tr><td>Source</td><td><code>agent/</code>, a PAC workspace (needs PAC 2.13.1 or later; this laptop has 2.14.1), linked to the og-svc bot. <code>agent/.mcs/</code> is gitignored. Files: <code>settings.mcs.yml</code> (instructions, model, channels), <code>capabilities/tools/*.mcs.yml</code>, <code>behaviors/&lt;skill&gt;/SKILL.md</code> + <code>skill.mcs.yml</code>, <code>connectors/</code>, <code>infrastructure/connections/</code>.</td></tr>
+</table></div>
+
+<h2 id="instructions">Instructions</h2>
+<p>From <code>agent/settings.mcs.yml</code> (current). "My patients" is fixed to Patrick O'Gorman because the demo sign-in's display name is MOD Administrator (<a href="decisions.html#adr-0008">ADR-0008</a>, <a href="known-issues.html#ki-20">KI-20</a>). The <code>&lt;column&gt;name</code> rule comes from how the Dataverse MCP server returns labels (<a href="known-issues.html#ki-18">KI-18</a>).</p>
+<pre class="wrap"><code>You are Discharge Navigator. You help case managers, nurses, social workers and physicians at Contoso University Health, an academic medical center, get patients to a safe, on-time discharge.
+
+The current user is the case manager Patrick O'Gorman. "My patients" means discharge plans whose Case Manager (amc_casemanager) is "Patrick O'Gorman" and whose Plan Status is not Discharged.
+
+Data
+- All patient, discharge plan and task data is in Dataverse. Read it with the Dataverse tool before you answer any question about patients, plans or tasks. Never answer from memory, and never invent patients, values, dates or statuses.
+- Tables: Patient (amc_patient), Discharge Plan (amc_dischargeplan, lookup amc_patientid to Patient), Discharge Task (amc_dischargetask, lookup amc_dischargeplanid to Discharge Plan).
+- A plan's name (amc_name) is its DP number followed by the patient's name, for example "DP-1001 Miguel Reyes". Find a patient's plan by matching the name.
+- Plan Status (amc_status): Planning, Medically Ready, Pending Barriers, Ready for Discharge, Discharged.
+- "Medically ready but still here" means Medically Ready On (amc_medicallyreadyon) is before today and the plan is not Discharged. Say how many days each has waited.
+- A barrier is a Discharge Task with Discharge Barrier (amc_isbarrier) = Yes and Task Status (amc_status) not Completed. When asked what is holding up a discharge, list the open barriers with task type, status, assigned to and external party, and include the task notes.
+- Show choice labels (for example "Spanish", "Skilled Nursing Facility"), never numeric choice values. In read_query SQL, every choice, Yes/No and lookup column has a companion column with "name" appended that holds the label or related row's name: amc_statusname, amc_preferredlanguagename, amc_destinationname, amc_isbarriername, amc_patientidname, amc_dischargeplanidname. If you're unsure of a column name, describe the table first.
+
+Answers
+- Name the patient, plan (DP number), unit and plan status.
+- Keep answers short. Prefer bullet lists.
+
+Drafting
+- Model deployments in Microsoft Foundry, not you, write patient-facing discharge instructions and prior authorization packets. Use the patient-discharge-summary and prior-auth-packet skills for those requests.
+- You don't make clinical decisions or recommendations. You find information and draft documents; a clinician reviews and signs anything clinical. Label generated documents as drafts.
+- Don't create or change Dataverse records unless the user asks you to save a draft.</code></pre>
+<p>To edit: change <code>settings.mcs.yml</code> and push, or edit in the portal and pull (<a href="runbook.html#edit-the-agent">runbook</a>). <code>pac copilot init --instructions</code> can't take this text, because it's multi-line (<a href="known-issues.html#ki-04">KI-04</a>).</p>
+
+<h2 id="tools">Tools</h2>
+<div class="tablewrap"><table>
+  <tr><th></th><th>Dataverse</th><th>Foundry chat completion</th></tr>
+  <tr><td>File</td><td><code>capabilities/tools/amc_dataverse-mcp.mcs.yml</code></td><td><code>capabilities/tools/amc_foundry-chat-completion.mcs.yml</code></td></tr>
+  <tr><td>Kind</td><td><code>McpTool</code>: the GA Microsoft Dataverse MCP server, operation <code>InvokeMCP</code> on <code>shared_commondataserviceforapps</code>. It replaces Dataverse knowledge, which the harness doesn't offer.</td><td><code>ConnectorTool</code>: the <strong>Foundry Deployments</strong> custom connector, operation <code>ChatCompletion</code> (<a href="foundry.html#connector">Foundry</a>)</td></tr>
+  <tr><td>Credentials</td><td><strong>Invoker</strong> (end user). Each user reads Dataverse with their own permissions. The first call in Teams can ask the user to sign in (<a href="known-issues.html#ki-23">KI-23</a>).</td><td><strong>Maker</strong>: every user calls through O'G's connection <code>amc-foundry-key</code>, so nobody sees a key prompt</td></tr>
+  <tr><td>Connection reference</td><td><code>amc_DischargeNavigator.cr.shared_commondataserviceforapps.75ec0d0e-c92a-4093-a137-820b42674f99</code>. The portal created it when O'G trimmed the tools, replacing the original (<a href="known-issues.html#ki-06">KI-06</a>).</td><td><code>amc_DischargeNavigator.cr.shared_new-5ffoundry-20deployments-5fe712c9f154572394.5dff</code>, linked to the custom connector record through <code>customconnectorid</code> (<a href="known-issues.html#ki-15">KI-15</a>)</td></tr>
+  <tr><td>Scope</td><td><code>allowedTools</code>: <code>read_query</code>, <code>search</code>, <code>describe</code>, <code>search_data</code>, <code>update_record</code>. Everything else is off, including <code>create_table</code>, <code>update_table</code>, <code>delete_table</code>, <code>delete_record</code>, the skill tools and the file tools. It can read and update a plan; it can't delete anything.</td><td>Called only as the two skills direct (the tool description says so)</td></tr>
+  <tr><td>Description</td><td>Microsoft Dataverse MCP server. Lists and describes tables, queries rows and updates records in the Patient (amc_patient), Discharge Plan (amc_dischargeplan) and Discharge Task (amc_dischargetask) tables. Use it for every question about patients, discharge plans, tasks and barriers.</td><td>Sends messages to a model deployment in Microsoft Foundry, through Azure API Management, and returns the completion. Deployments: patient-summary (Mistral-Large-3) writes patient-facing discharge instructions; prior-auth (gpt-5.5) writes prior authorization packets. Use it only as the patient-discharge-summary and prior-auth-packet skills direct.</td></tr>
+</table></div>
+<p>Why the two credential modes differ: <a href="decisions.html#adr-0007">ADR-0007</a>.</p>
+
+<h2 id="skills">Skills</h2>
+<p>Inline skills (<code>kind: InlineAgentSkill</code>) in <code>agent/behaviors/</code>. Each one gathers facts from Dataverse, calls the Foundry tool with its own system prompt, and returns the model's text unchanged. Neither lets the orchestrator write, rewrite or translate the draft itself. If the Foundry call fails, the skill says the model is unavailable and stops.</p>
+<div class="tablewrap"><table>
+  <tr><th></th><th><code>patient-discharge-summary</code></th><th><code>prior-auth-packet</code></th></tr>
+  <tr><td>Use when</td><td>The user asks for patient instructions, a patient summary, discharge instructions or teach-back material</td><td>The user asks for a prior auth packet, an authorization request, or clinical justification for a payer</td></tr>
+  <tr><td>Reads from the plan</td><td>Primary Diagnosis, Hospital Course, Discharge Destination, Expected Discharge, Unit</td><td>Primary Diagnosis, Admit Date, Hospital Course, Discharge Destination, Expected Discharge, Attending Physician, Case Manager</td></tr>
+  <tr><td>Reads from the patient</td><td>Name, Preferred Language, Medications, Allergies, Living Situation, Caregiver, Primary Care Provider, PCP Practice</td><td>Name, MRN, Date of Birth, Payer, Payer Plan, Comorbidities, Medications, Living Situation, Caregiver</td></tr>
+  <tr><td>Reads from tasks</td><td>Name, Task Type, Task Status, Due Date</td><td>Every task's name, type, status, External Party and <strong>Notes</strong>. The payer's request is in the prior-auth task notes.</td></tr>
+  <tr><td>Model deployment</td><td><code>patient-summary</code> (Mistral-Large-3)</td><td><code>prior-auth</code> (gpt-5.5)</td></tr>
+  <tr><td>Last line added</td><td><code>Model: &lt;model field&gt; | Draft for nurse review and signature</code></td><td><code>Model: &lt;model field&gt; | Draft for case manager review</code></td></tr>
+  <tr><td>Saves (only if the user says yes)</td><td>Patient Discharge Summary (<code>amc_patientsummary</code>), and Summary Status (<code>amc_summarystatus</code>) = Draft (417000001)</td><td>Prior Auth Packet (<code>amc_priorauthpacket</code>)</td></tr>
+</table></div>
+<p>The <code>Model:</code> line comes from the response's <code>model</code> field. Point to it on camera; never ask a model to name itself (<a href="known-issues.html#ki-09">KI-09</a>). The Code App shows saved drafts in the plan drawer (<a href="decisions.html#adr-0009">ADR-0009</a>).</p>
+
+<h2 id="system-prompts">System prompts</h2>
+<p>Each skill sends its system prompt word for word as the first message.</p>
+<p><strong>patient-discharge-summary</strong> <button class="copy" data-target="sp-summary">Copy</button></p>
+<pre class="wrap" id="sp-summary"><code>You write patient-facing hospital discharge instructions for Contoso University Health.
+Write entirely in the patient's preferred language at a 6th-grade reading level, with short sentences.
+Use these headings: Why you were in the hospital; Your medicines (mark NEW and CHANGED); Call your care team if; Call 911 if; Your next steps and appointments; Check your understanding (3 teach-back questions).
+Use only the facts provided. Do not add diagnoses, doses, appointments or advice that are not in the input. If something is missing, leave it out.
+End with one line, in the same language: "DRAFT - to be reviewed and signed by your nurse."</code></pre>
+<p><strong>prior-auth-packet</strong> <button class="copy" data-target="sp-priorauth">Copy</button></p>
+<pre class="wrap" id="sp-priorauth"><code>You are a utilization review assistant at Contoso University Health drafting a prior authorization request for post-acute care.
+Using only the chart excerpt provided, produce:
+1. Request summary: service, receiving facility, payer and plan, requested start date.
+2. Clinical justification for skilled need: functional status, skilled nursing or therapy needs, medical complexity, and why home is not yet safe.
+3. Documentation checklist: items present in the chart, and items the payer typically requires that are missing.
+4. Open questions for the case manager.
+Put the chart field each statement comes from in square brackets, e.g. [Hospital course].
+Do not invent values. If the payer asked for something (see task notes), say whether the chart contains it and quote it.
+End with: "DRAFT for case manager review - not submitted."</code></pre>
+<p class="callout info">For Miguel Reyes, the payer's ask is in the prior-auth task notes ("updated PT notes with ambulation distance and assist level"). The answer is in the hospital course ("Ambulating 150 ft with a rolling walker and standby assist"). The packet should quote it. That's the on-camera moment in <a href="demo-script.html#beat-3">beat 3</a>.</p>
+
+<h2 id="test-prompts">Test prompts</h2>
+<div class="tablewrap"><table>
+  <tr><th>Prompt</th><th>Expect</th></tr>
+  <tr><td>Which of my patients are medically ready but still here?</td><td>A short list with days waited. Miguel Reyes (DP-1001, 6 East, Pending Barriers) is on it.</td></tr>
+  <tr><td>What's holding up Miguel Reyes's discharge?</td><td>Open barriers with assignee, external party and notes: the SNF prior auth, SNF bed acceptance at Maple Grove, and the wheelchair van.</td></tr>
+  <tr><td>Draft Miguel Reyes's patient instructions</td><td>A Dataverse read, then a Foundry call. Text in <strong>Spanish</strong> (his preferred language) under the six headings, ending with <code>Model: mistral-large-3 | Draft for nurse review and signature</code>.</td></tr>
+  <tr><td>Build the SNF prior-auth packet for Miguel Reyes</td><td>Four sections with [field] citations, quoting "150 ft with a rolling walker and standby assist", ending with <code>Model: gpt-5.5-&hellip; | Draft for case manager review</code>.</td></tr>
+</table></div>
+<p>The four prompts passed in Microsoft 365 Copilot on 2026-10-19 (previous tenant). In og-svc on 2026-11-01, the barrier question and the prior-auth packet passed in Teams and Microsoft 365 Copilot. Results, the backend checks, and the beat 4 loop test: <a href="testing.html#smoke-tests">Testing</a>. If a draft comes back with no Foundry call and no <code>Model:</code> line, the orchestrator wrote it itself. Tighten the skill wording; as a last resort, move the drafts into harness workflows, which still aren't topics.</p>
+
+<h2 id="channels">Channels</h2>
+<ul>
+  <li><strong>Microsoft Teams</strong> and <strong>Microsoft 365 Copilot</strong> are on (O'G, 2026-10-19 in the previous tenant; both work in og-svc since 2026-11-01). They're in <code>settings.mcs.yml</code> as <code>MsTeams</code> and <code>Microsoft365Copilot</code>.</li>
+  <li>The Dataverse tool uses end-user auth, so a user's first Dataverse call in Teams can ask them to sign in (<a href="known-issues.html#ki-23">KI-23</a>). Run one prompt in the Teams client before you record.</li>
+  <li>Rolling the agent out org-wide needs admin approval in the Microsoft 365 admin center. The demo doesn't need that.</li>
+</ul>
+
+<h2 id="edit-log">Edit log</h2>
+<p>Log every agent change here, whether it was made in the portal or from <code>agent/</code>. Pull before you push; portal edits can change component names and connection references (<a href="known-issues.html#ki-06">KI-06</a>). After every init or push, check that no component landed in another solution (<a href="runbook.html#solution-membership">runbook</a>).</p>
+<div class="tablewrap"><table>
+  <tr><th>Date</th><th>Change</th><th>By</th></tr>
+  <tr><td>2026-10-19</td><td>Created with <code>pac copilot init --authoring-mode cli-copilot</code> (PAC upgraded from 2.6.4 to 2.13.1): instructions, the Dataverse MCP and Foundry chat completion tools, and both skills. Created two connection references, linked the Foundry one to the custom connector record, and added the bot and its 4 components to AMCDischargeNavigator. Solution re-exported.</td><td>Claude</td></tr>
+  <tr><td>2026-10-19</td><td>Init side effect: its own solution <code>amc_DischargeNavigator</code> (bot only) and a duplicate publisher <code>amc</code> (<a href="known-issues.html#ki-03">KI-03</a>). Claude didn't report them; O'G found and deleted both. Afterwards the bot, its components, the tables, both connection references, the connector and the Code App were all intact.</td><td>O'G</td></tr>
+  <tr><td>2026-10-19</td><td>Init side effect: the bot, its components and our 3 tables also landed in O'G's preferred solution, MedicaidIntegrityLab (<a href="known-issues.html#ki-05">KI-05</a>). With O'G's OK, removed the 11 AMC components (membership only; nothing deleted). O'G later switched his preferred solution to AMCDischargeNavigator.</td><td>Claude</td></tr>
+  <tr><td>2026-10-19</td><td>Published at 12:31 UTC with <code>pac copilot publish</code>, after O'G said "publish it" (<a href="known-issues.html#ki-21">KI-21</a>). No AMC components in other solutions afterwards.</td><td>Claude</td></tr>
+  <tr><td>2026-10-19</td><td>Dataverse tool trimmed to 5 tools (stored as <code>allowedTools</code>). The portal swapped in a new Dataverse connection reference (<a href="known-issues.html#ki-06">KI-06</a>), in AMCDischargeNavigator only.</td><td>O'G</td></tr>
+  <tr><td>2026-10-19</td><td>Teams and Microsoft 365 Copilot channels on; re-published at 13:03 UTC.</td><td>O'G</td></tr>
+  <tr><td>2026-10-19</td><td><code>pac copilot pull</code> into <code>agent/</code>: <code>allowedTools</code>, the channels, the new connection reference and its renamed sync file. Solution re-exported.</td><td>Claude</td></tr>
+  <tr><td>2026-11-01</td><td>Imported into og-svc (demo tenant) with the solution: new bot id <code>995d5b75-d488-42ba-8a99-9a5206a02f1e</code>. The Foundry connection reference was bound to <code>amc-foundry-key</code> by script (<a href="decisions.html#adr-0015">ADR-0015</a>).</td><td>Claude</td></tr>
+  <tr><td>2026-11-01</td><td>Dataverse tool: connected Dataverse and confirmed end-user authentication. The portal replaced the Dataverse connection reference with <code>...889074b5-0cd8-499d-a619-4ced19d5b57e</code> and republished; the new reference landed only in the Default solution, and Claude added it to AMCDischargeNavigator (<a href="known-issues.html#ki-06">KI-06</a>).</td><td>O'G, Claude</td></tr>
+  <tr><td>2026-11-01</td><td>PAC updated to 2.14.1; <code>agent/</code> linked to the og-svc bot and synced (environment details only).</td><td>Claude</td></tr>
+  <tr><td>2026-11-01</td><td>Foundry tool <code>connectorId</code> pointed at og-svc's custom connector (<code>...5fa6b26604e9b050ca</code>); pushed to the draft (<a href="known-issues.html#ki-30">KI-30</a>).</td><td>Claude</td></tr>
+  <tr><td>2026-11-01</td><td>Published at 16:53 UTC. The prior-auth packet then worked in Teams and Microsoft 365 Copilot. Solution re-exported.</td><td>O'G, Claude</td></tr>
+</table></div>
+
+<h2 id="rebuild">Rebuilding from the repo</h2>
+<p><strong>On another machine</strong>, <code>agent/.mcs/</code> isn't in git. Run <code>pac copilot clone</code> into a fresh folder, or ask Claude to re-link <code>agent/</code>. Then pull, edit, push and publish (<a href="runbook.html#edit-the-agent">runbook</a>).</p>
+<p><strong>Into a new environment from the solution</strong>, which is how og-svc was built on 2026-11-01: <a href="runbook.html#new-tenant">Runbook &gt; Rebuild in a new tenant</a>, including the KI-30 <code>connectorId</code> fix.</p>
+<p><strong>From scratch</strong> (not tested end to end; the agent has only been built from scratch once):</p>
+<ol>
+  <li>Check that your preferred solution is AMC Discharge Navigator (<a href="known-issues.html#ki-05">KI-05</a>). The tables, the Foundry Deployments connector and its <code>amc-foundry-key</code> connection must already exist (<a href="runbook.html#foundry-connection">runbook</a>).</li>
+  <li><code>pac copilot init --authoring-mode cli-copilot</code> with a one-line <code>--instructions</code> (<a href="known-issues.html#ki-04">KI-04</a>). Report and remove the solution and publisher that init creates (<a href="known-issues.html#ki-03">KI-03</a>).</li>
+  <li>Copy in <code>settings.mcs.yml</code> (instructions, model, channels), <code>capabilities/tools/</code> and <code>behaviors/</code> from this repo. On push, PAC rewrites flat inline-skill YAML into <code>behaviors/&lt;name&gt;/SKILL.md</code> + <code>skill.mcs.yml</code> (<a href="known-issues.html#ki-16">KI-16</a>).</li>
+  <li>Make sure both connection references exist in the solution, and that the Foundry one has <code>customconnectorid</code> set, or solution export fails (<a href="known-issues.html#ki-15">KI-15</a>).</li>
+  <li><code>pac copilot push --project-dir ./agent</code>, then <code>pac copilot publish</code>. Turn on the Teams and Microsoft 365 Copilot channels, and publish again.</li>
+  <li>Check solution membership, re-export the solution (<a href="runbook.html#re-export-the-solution">runbook</a>), run the <a href="#test-prompts">test prompts</a>, and add a row to the <a href="#edit-log">edit log</a>.</li>
+</ol>
+</main>
+<script>
+  document.querySelectorAll('button.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = document.getElementById(btn.dataset.target).innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+      }).catch(function () { btn.textContent = 'Select + Ctrl+C'; });
+    });
+  });
+</script>
+</body>
+</html>

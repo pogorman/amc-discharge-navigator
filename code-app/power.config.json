@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "appId": "a1951694-de5a-4196-a0b9-8145e3e4645c",
+  "appDisplayName": "Discharge Command Center",
+  "region": "prod",
+  "appType": "CodeApp",
+  "environmentId": "<environment-id>",
+  "description": "House-wide discharge and barrier view for Contoso University Health (AMC demo)",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {
+    "eea44d62-5a7e-4916-b6de-8c6ea9733b23": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_microsoftcopilotstudio",
+      "displayName": "Microsoft Copilot Studio",
+      "dataSources": [
+        "microsoftcopilotstudio"
+      ],
+      "dataSets": {}
+    }
+  },
+  "databaseReferences": {
+    "default.cds": {
+      "dataSources": {
+        "dischargeplans": {
+          "entitySetName": "amc_dischargeplans",
+          "logicalName": "amc_dischargeplan",
+          "isHidden": false
+        },
+        "dischargetasks": {
+          "entitySetName": "amc_dischargetasks",
+          "logicalName": "amc_dischargetask",
+          "isHidden": false
+        },
+        "patients": {
+          "entitySetName": "amc_patients",
+          "logicalName": "amc_patient",
+          "isHidden": false
+        }
+      },
+      "environmentVariableName": ""
+    }
+  }
+}
