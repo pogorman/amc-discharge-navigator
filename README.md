@@ -6,4 +6,4 @@ An "Apps & Agents" demo for academic medical centers. A **Copilot Studio** agent
 
 ## About this copy
 
-A public snapshot of a private working repo, taken from commit `baba611` on 2026-11-04. Tenant-specific values (tenant, subscription and environment IDs, sign-in names) are replaced by `<placeholders>`; put your own in `.env` (`docs/runbook.html#new-machine`). The docs are the build's working notes, so links into the original environment won't open for you.
+A public snapshot of a private working repo, taken from commit `1855f7e` on 2026-11-05. Tenant-specific values (tenant, subscription and environment IDs, sign-in names) are replaced by `<placeholders>`; put your own in `.env` (`docs/runbook.html#new-machine`). The docs are the build's working notes, so links into the original environment won't open for you.
